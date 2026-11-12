@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id              String      @id @default(cuid())
+  title           String
+  description     String
+  clientName      String
+  freelancerName  String
+  freelancerEmail String
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  milestones      Milestone[]
+  events          Event[]
+}
+
+model Milestone {
+  id          String       @id @default(cuid())
+  projectId   String
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  order       Int
+  title       String
+  description String
+  amount      Float
+  status      String       @default("Created") // Created, Funded, Submitted, Verified, Approved, PaidOut, RevisionRequested
+  criteria    String       // JSON string of acceptance criteria
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  submissions Submission[]
+  payments    Payment[]
+  payouts     Payout[]
+  events      Event[]
+}
+
+model Submission {
+  id               String         @id @default(cuid())
+  milestoneId      String
+  milestone        Milestone      @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  url              String
+  type             String         // "github" | "url"
+  evidenceSnapshot String         // Text or JSON string snapshot
+  createdAt        DateTime       @default(now())
+  verifications    Verification[]
+}
+
+model Verification {
+  id           String     @id @default(cuid())
+  submissionId String
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  perCriterion String     // JSON string of criteria evaluation results
+  summary      String
+  score        Int        // Score from 0 to 100
+  createdAt    DateTime   @default(now())
+}
+
+model Payment {
+  id            String    @id @default(cuid())
+  milestoneId   String
+  milestone     Milestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  paypalOrderId String
+  captureId     String?
+  amount        Float
+  currency      String    @default("USD")
+  status        String    // PENDING, COMPLETED, FAILED
+  mode          String    // mock | sandbox
+  createdAt     DateTime  @default(now())
+}
+
+model Payout {
+  id          String    @id @default(cuid())
+  milestoneId String
+  milestone   Milestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  batchId     String
+  status      String    // SUCCESS, PENDING, SIMULATED
+  simulated   Boolean   @default(false)
+  amount      Float
+  recipient   String
+  createdAt   DateTime  @default(now())
+}
+
+model Event {
+  id          String     @id @default(cuid())
+  projectId   String
+  project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  milestoneId String?
+  milestone   Milestone? @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  type        String
+  message     String
+  createdAt   DateTime   @default(now())
+}
