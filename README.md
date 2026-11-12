@@ -2,28 +2,30 @@
 
 > **"Work gets verified against what was promised. Payments move forward with evidence, not guesswork."**
 
-MilestoneGuard AI is an intelligent, evidence-based milestone payment platform built for the **PayPal AI Hackathon 2026**. It solves the fundamental dilemma of freelance contracts: clients fear paying for incomplete or low-quality work, while freelancers fear delivering work and not getting paid.
+MilestoneGuard AI is an intelligent, evidence-based milestone payment platform built for the **PayPal AI Hackathon 2026**. It solves the core dilemma of modern freelance contracts: clients fear paying upfront for low-quality or incomplete work, while freelancers fear doing work and not getting paid.
 
-With MilestoneGuard AI, clients fund milestones securely via **PayPal Orders v2**. When the freelancer submits their GitHub repository or live URL, **Google Gemini 2.0 Flash** performs static code inspection against agreed acceptance criteria, producing a transparent evidence report with cited source excerpts. Upon client approval, a conditional payout is automatically released to the freelancer via the **PayPal Payouts API**.
+With MilestoneGuard AI, clients fund milestones via **PayPal Orders v2** into the platform's merchant account. When the freelancer submits their GitHub repository or live URL, **Google Gemini** performs static source code analysis against agreed acceptance criteria, producing a transparent evidence report with cited source excerpts. Upon client approval, a conditional payout is released to the freelancer via the **PayPal Payouts API**.
 
 ---
 
 ## ⚠️ Important Payment Notice
 
 > **Milestone-Based Conditional Payment Release (Not Escrow)**  
-> MilestoneGuard AI is **not an escrow service** and does not hold funds in a licensed fiduciary escrow trust. Instead, payments are captured into the platform's PayPal merchant account via PayPal Orders v2 upon milestone funding, and subsequently released via the PayPal Payouts API upon verified client sign-off.
+> MilestoneGuard AI is **not an escrow service** and does not hold funds in a licensed fiduciary escrow trust. Instead, payments are captured into the platform's PayPal merchant account via PayPal Orders v2 upon milestone funding, and subsequently disbursed via the PayPal Payouts API upon verified client approval.
 
 ---
 
 ## Key Features
 
 - **Sequential Milestone Contracts**: Define clear, testable acceptance criteria with AI assistance.
-- **PayPal Orders v2 Integration**: Server-side order creation and capture into the platform account.
-- **Gemini 2.0 Flash Verification Engine**: Static AST and source code inspection. Every evaluation cites exact file paths and excerpts from the repository snapshot with zero hallucination.
-- **Conditional PayPal Payouts**: Automated payouts sent to the freelancer's PayPal email with automated fallback simulation.
+- **PayPal Orders v2 Integration**: Server-side order creation and capture into the platform merchant account. Amounts are strictly loaded from the database, never trusted from client payloads.
+- **Gemini Code Verification Engine**: Static source code analysis against criteria. Every evaluation cites exact file paths and excerpts from the repository snapshot.
+- **Conditional PayPal Payouts**: Automated payouts sent to the freelancer's PayPal email using deterministic batch IDs (`MG_PAYOUT_M_${milestoneId}`) for deduplication.
 - **Transparent Audit Trail**: Immutable event logging for order captures, submissions, verification scores, revision notes, and payouts.
+- **Server-Side Role Guarding**: Cookie-backed role enforcement preventing cross-role privilege escalation (e.g. freelancers approving their own payouts).
 - **Dual-Persona Switcher**: 1-click toggle between **Aarav Mehta** (Client) and **Sara Khan** (Freelancer) stored in session cookies.
-- **Mock & Sandbox Modes**: Seamless local demo with zero credentials needed, or full integration with PayPal Sandbox and Gemini APIs.
+- **Mock & Sandbox Modes**: Seamless local demo with zero credentials needed (`PAYMENT_MODE=mock`), or live integration with PayPal Sandbox and Google Gemini APIs (`PAYMENT_MODE=sandbox`).
+- **Health & Diagnostic Endpoint**: `/api/health` reports system status, database connectivity, and configuration flags without leaking secrets.
 
 ---
 
@@ -33,44 +35,47 @@ With MilestoneGuard AI, clients fund milestones securely via **PayPal Orders v2*
 sequenceDiagram
     autonumber
     actor Client as Client (Aarav Mehta)
-    participant MG as MilestoneGuard AI
+    participant MG as MilestoneGuard AI (Server)
     participant PP as PayPal API (Orders & Payouts)
     actor Freelancer as Freelancer (Sara Khan)
     participant GH as GitHub API
-    participant AI as Gemini 2.0 Flash
+    participant AI as Gemini Model
 
-    Client->>MG: Create project & draft AI criteria
-    Client->>PP: Fund milestone via PayPal Checkout
+    Client->>MG: Create project & draft acceptance criteria
+    Client->>PP: Authorize & capture milestone payment via PayPal Checkout
     PP-->>MG: Server captures payment into platform account (Status: Funded)
     Freelancer->>MG: Submit GitHub Repo or Live URL
     MG->>GH: Fetch repository file tree & relevant source files
     MG->>AI: Statically evaluate source files against criteria
     AI-->>MG: Structured Verification Report (Met, Partial, Missing)
     Client->>MG: Review evidence report & click Approve
-    MG->>PP: Execute conditional payout to freelancer email
+    MG->>PP: Execute conditional payout to freelancer email (sender_batch_id)
     PP-->>Freelancer: Payout delivered (Status: PaidOut)
 ```
 
 ---
 
-## Hackathon Highlights
+## Hackathon Technical Implementation
 
 ### 1. How PayPal is Used
-- **PayPal Orders v2**: Creates intent `CAPTURE` orders with reference IDs linked to database milestones. Amounts are strictly read from the server database, never trusted from the client.
-- **Server-Side Capture**: Funds are verified and captured using PayPal OAuth2 tokens into the platform merchant account.
+- **PayPal Orders v2**: Creates intent `CAPTURE` orders with reference IDs linked to database milestones. Amounts are strictly validated and loaded from the server database.
+- **Server-Side Capture**: Funds are authorized and captured via OAuth2 Bearer tokens from `api-m.sandbox.paypal.com` directly into the platform merchant account.
 - **PayPal Payouts API**: Automated conditional disbursement directly to the freelancer's PayPal email upon client approval.
-- **Webhook Signature Verification**: Listens for `PAYMENT.CAPTURE.COMPLETED` events and verifies cryptographic transmission signatures via `/v1/notifications/verify-webhook-signature`.
-- **Mock Mode Fallback**: Provides a complete simulation engine for offline demonstrations and judging without live API credentials.
+- **Deduplication & Idempotency**: Payouts utilize a deterministic `sender_batch_id` (`MG_PAYOUT_M_${milestoneId}`). On transient network retries, PayPal deduplicates the request and prevents double payouts.
+- **Webhook Verification**: Validates incoming PayPal webhook events using `/v1/notifications/verify-webhook-signature` with SHA256 RSA verification.
+- **Mock Mode**: Complete offline simulation engine allowing judges and developers to test the full lifecycle without creating sandbox accounts.
 
 ### 2. How AI is Used
 - **AI Acceptance Criteria Drafting**: Gemini assists both parties in turning ambiguous project descriptions into 3–5 objective, testable criteria chips.
-- **Static Code Verification**: Gemini inspects the AST file tree and relevant code files (up to 8 prioritized source files, truncated to ~4000 characters).
-- **Strict Evidence Citation**: The system prompt forces Gemini to only cite actual lines from the snapshot. Unimplemented criteria are marked `missing`, stubbed logic is marked `partial`, and completed items are marked `met`.
-- **Resilient AI Pipeline**: Automatic single-retry on rate limits with domain-aware heuristic fallback to guarantee that the UI never crashes.
+- **Static Code Verification**: Gemini inspects the AST file tree and relevant code files (prioritized source files truncated to ~4000 characters).
+- **Strict Evidence Citation**: The system prompt forces Gemini to only cite actual lines from the repository snapshot. Unimplemented criteria are marked `missing`, stubbed logic is marked `partial`, and completed items are marked `met`.
+- **Configurable Model**: The AI model is configured via `GEMINI_MODEL` (defaults to `gemini-2.0-flash`).
+- **Resilient AI Pipeline**: Automatic retry on rate limits with domain-aware heuristic fallback so the application never crashes.
 
-### 3. Limitations
-- **Static Analysis Only**: Code is analyzed through AST and text extraction; it is not executed inside a runtime sandbox.
-- **Simulated Payouts Fallback**: If PayPal Payouts credentials are restricted or unavailable in sandbox accounts, MilestoneGuard marks payouts with a `Simulated Payout` badge for demo integrity.
+### 3. System Limitations
+- **Static Analysis Only**: Code is analyzed through static text and AST inspection of repository contents; code is not executed in a runtime sandbox or VM.
+- **Sandbox Environment Only**: Intended for PayPal Sandbox testing and hackathon evaluation; production deployment requires standard PayPal compliance approvals.
+- **Simulated Payout Fallback**: When PayPal Sandbox accounts lack Payouts API permissions, the system tags the transaction with a `Simulated Payout` badge to preserve demo flow without masking status.
 
 ---
 
@@ -78,12 +83,12 @@ sequenceDiagram
 
 - **Framework**: Next.js 14 (App Router) + TypeScript
 - **Styling**: Tailwind CSS + Radix UI primitives (shadcn/ui design language)
-- **Icons & Polish**: Lucide React, Tabular financial numbers, Inter font
+- **Design System**: Inter font, 8px grid scale, WCAG AA contrast, tabular financial numbers (`tabular-nums`)
 - **Database**: SQLite with Prisma ORM
-- **Validation**: Zod (all API endpoints and AI responses)
+- **Validation**: Zod (all API endpoints, AI responses, and webhook payloads)
 - **Payments**: PayPal REST API (Orders v2, Payouts, Webhooks) & `@paypal/react-paypal-js`
-- **AI Model**: Google Gemini 2.0 Flash via `@google/generative-ai`
-- **Testing**: Vitest (State-machine lifecycle and criteria validation tests)
+- **AI Model**: Google Gemini (`GEMINI_MODEL`, default `gemini-2.0-flash`) via `@google/generative-ai`
+- **Testing**: Vitest (Milestone state-machine, action guards, and Zod request schemas)
 - **Deployment**: Render Web Service (`render.yaml` with auto-migration and auto-seed)
 
 ---
@@ -109,11 +114,11 @@ cp .env.example .env
 | `PAYPAL_CLIENT_ID` | PayPal Developer Sandbox Client ID | - |
 | `PAYPAL_CLIENT_SECRET` | PayPal Developer Sandbox Secret | - |
 | `PAYPAL_WEBHOOK_ID` | Optional PayPal Webhook ID | - |
-| `NEXT_PUBLIC_PAYPAL_CLIENT_ID`| Public PayPal Client ID | - |
+| `NEXT_PUBLIC_PAYPAL_CLIENT_ID`| Public PayPal Client ID for JS SDK | - |
 | `PAYPAL_CURRENCY` | Currency code for orders & payouts | `USD` |
 | `GEMINI_API_KEY` | Google Gemini API Key | - |
 | `GEMINI_MODEL` | Gemini Model Name | `gemini-2.0-flash` |
-| `GITHUB_TOKEN` | Optional GitHub PAT for higher API rate limits | - |
+| `GITHUB_TOKEN` | Optional GitHub PAT for higher rate limits | - |
 | `APP_BASE_URL` | Base URL for webhooks and redirects | `http://localhost:3000` |
 | `DEMO_REPO_URL` | Pre-filled sample repo for 1-click submission | `https://github.com/facebook/react` |
 | `DATABASE_URL` | SQLite database connection string | `file:./dev.db` |
@@ -132,33 +137,41 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## How to Get API Keys
+## Health Check Endpoint
 
-### PayPal Sandbox Keys
-1. Log in to the [PayPal Developer Dashboard](https://developer.paypal.com/dashboard/).
-2. Navigate to **Apps & Credentials** and ensure **Sandbox** is toggled.
-3. Click **Create App**, name it `MilestoneGuard`, and copy the **Client ID** and **Secret**.
-4. In your sandbox business account settings, ensure the **Payouts** capability is enabled.
-
-### Google Gemini API Key
-1. Visit [Google AI Studio](https://aistudio.google.com/app/apikey).
-2. Click **Create API Key** and copy the generated key into `GEMINI_API_KEY`.
+Navigate to `GET /api/health` to verify system diagnostics:
+```json
+{
+  "status": "healthy",
+  "timestamp": "2026-11-12T12:00:00.000Z",
+  "paymentMode": "mock",
+  "database": "connected",
+  "env": {
+    "PAYPAL_CLIENT_ID": false,
+    "PAYPAL_CLIENT_SECRET": false,
+    "PAYPAL_WEBHOOK_ID": false,
+    "NEXT_PUBLIC_PAYPAL_CLIENT_ID": false,
+    "GEMINI_API_KEY": false,
+    "GITHUB_TOKEN": false
+  }
+}
+```
 
 ---
 
 ## Demo Walkthrough Script
 
-### Seeded Demo Persona:
+### Seeded Personas
 - **Client**: Aarav Mehta
 - **Freelancer**: Sara Khan (`sb-1nae650838145@business.example.com`)
 
-### Step-by-Step Demo Flow:
+### Step-by-Step Flow:
 1. **Landing Page (`/`)**:
-   - Inspect the interactive live preview card showcasing a verified GitHub repository evaluation.
+   - Inspect the interactive live preview card showcasing a verified repository evaluation.
    - Click **Open Dashboard**.
 2. **Dashboard (`/dashboard`)**:
-   - View count-up stat cards: Total Value, Funded, Awaiting Review, Paid Out.
-   - Notice the role switcher in the top right. Switch between **Aarav Mehta (Client)** and **Sara Khan (Freelancer)** to observe how action prompts dynamically change.
+   - View stat cards: Total Value, Funded, Awaiting Review, Paid Out.
+   - Use the role switcher in the header to toggle between **Client** and **Freelancer** personas.
 3. **Inspect Active Project (`/projects/[id]`)**:
    - Click on the **E-commerce Website** project.
    - Milestone 1 is **Paid Out** ($1,200).
@@ -166,30 +179,19 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
    - Milestone 3 is **Created** ($1,000) and unfunded.
 4. **Review Verification Report (`/projects/[id]/milestones/[mid]`)**:
    - Open Milestone 2.
-   - Examine the **AI Verification Evidence Report**: 60% overall score with 3 Met, 1 Partial, and 1 Missing criterion.
-   - Click on each criterion card to inspect the exact file paths and syntax-highlighted code snippets cited by Gemini.
+   - View the top action banner and horizontal status stepper.
+   - Inspect the **Evidence Report**: 60% overall score with 3 Met, 1 Partial, and 1 Missing criterion, citing exact file paths and code snippets.
 5. **Client Approval & Conditional Payout**:
    - As Aarav Mehta (Client), click **Approve & Release Payment**.
-   - Review the confirmation modal and confirm payout.
-   - Observe the instant transition to **Paid Out** with the PayPal Payout receipt badge and batch ID.
+   - Confirm the release in the modal.
+   - Status updates instantly to **Paid Out** with receipt details and deterministic batch ID.
 6. **Freelancer Submission (`Portfolio + Admin Dashboard`)**:
    - Switch to **Sara Khan (Freelancer)**.
    - Navigate to Milestone 1 ("Public Portfolio & Case Study Showcase", funded with $1,500).
-   - Click **Use sample repository** to automatically populate the demo repo URL.
-   - Click **Run AI Verification** and watch the 4-step progress animation: fetching repository -> reading key files -> checking criteria with Gemini -> generating evidence report.
+   - Click **Use sample repository** to populate the demo repo URL.
+   - Click **Run AI Verification** to watch the animated 4-step progress: fetching repo -> reading files -> evaluating criteria -> generating evidence report.
 7. **Reset Demo Data**:
-   - Click **Reset demo data** in the footer at any time to restore the initial test state.
-
----
-
-## Preparing a Sample Repository for Mixed Results
-
-To demonstrate a realistic report with **Met**, **Partial**, and **Missing** criteria:
-1. Create a public repository (e.g. `ecommerce-checkout-module`).
-2. Add files matching some criteria (e.g., `src/context/CartContext.tsx` with `localStorage` methods for a "Met" score).
-3. Add a file with a `// TODO:` comment or partial logic for a second criterion (e.g., `src/lib/discounts.ts` with code discount math but without min-spend checks for a "Partial" score).
-4. Leave out any files or references to a third criterion (e.g., invoice PDF generator for a "Missing" score).
-5. Submit the repository URL in MilestoneGuard to watch Gemini accurately differentiate each tier.
+   - Click **Reset demo data** in the footer at any time to re-seed the initial test state.
 
 ---
 
@@ -198,18 +200,10 @@ To demonstrate a realistic report with **Met**, **Partial**, and **Missing** cri
 ```bash
 npm test
 ```
-Runs the test suite verifying:
-- Milestone state-machine lifecycle (Created -> Funded -> Submitted -> Verified -> Approved -> PaidOut and RevisionRequested loops).
-- Zod criteria payload validation and score percentage calculation logic.
-
----
-
-## Deployment on Render
-
-This project includes a native `render.yaml` specification designed for Render's free web tier:
-- Automatically executes migrations and seeds the demo database on fresh container start (`scripts/init-db.ts`).
-- Build Command: `npm install && npx prisma generate && npm run build`
-- Start Command: `npm run start`
+Executes the Vitest suite covering:
+- **Milestone State Machine**: Legal transitions, all illegal transitions, and action guard preconditions.
+- **Criteria & Scoring**: JSON schema validation, status boundaries, and score percentage calculations.
+- **Zod Request Schemas**: Project creation, payment capture, orders, submissions, and revisions.
 
 ---
 
