@@ -10,13 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useRole } from "@/context/role-context";
 
-export function Header() {
+export function Header({ paymentMode = "mock" }: { paymentMode?: string }) {
   const pathname = usePathname();
   const { role } = useRole();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // In production / mock mode from env
-  const paymentMode = process.env.NEXT_PUBLIC_PAYMENT_MODE || "mock";
+  const isMock = paymentMode.toLowerCase() === "mock";
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-background/95 backdrop-blur-md transition-all">
@@ -41,14 +40,28 @@ export function Header() {
           </Link>
 
           {/* Payment Mode Badge (Essential for Hackathon judges) */}
-          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-teal-200/60 dark:border-teal-800/60 bg-teal-50/60 dark:bg-teal-950/40 text-[11px] text-teal-800 dark:text-teal-300 font-medium">
+          <div
+            className={`hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium ${
+              isMock
+                ? "border-amber-200/60 dark:border-amber-800/60 bg-amber-50/60 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300"
+                : "border-teal-200/60 dark:border-teal-800/60 bg-teal-50/60 dark:bg-teal-950/40 text-teal-800 dark:text-teal-300"
+            }`}
+          >
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
+              <span
+                className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                  isMock ? "bg-amber-400" : "bg-teal-400"
+                }`}
+              ></span>
+              <span
+                className={`relative inline-flex rounded-full h-2 w-2 ${
+                  isMock ? "bg-amber-500" : "bg-teal-500"
+                }`}
+              ></span>
             </span>
-            <span>{paymentMode.toUpperCase()} MODE</span>
-            <span className="text-teal-600 dark:text-teal-400 font-normal">
-              (PayPal Orders & Payouts)
+            <span>{isMock ? "Mock Mode" : "Sandbox Mode"}</span>
+            <span className="opacity-80 font-normal">
+              {isMock ? "(Simulated PayPal)" : "(Live PayPal Sandbox)"}
             </span>
           </div>
         </div>

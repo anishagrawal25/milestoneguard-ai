@@ -56,17 +56,18 @@ interface MilestoneActionPanelProps {
     freelancerName: string;
     freelancerEmail: string;
   };
+  paymentMode?: string;
+  demoRepoUrl?: string;
 }
 
-export function MilestoneActionPanel({ milestone, project }: MilestoneActionPanelProps) {
+export function MilestoneActionPanel({
+  milestone,
+  project,
+  paymentMode = "mock",
+  demoRepoUrl = "https://github.com/facebook/react",
+}: MilestoneActionPanelProps) {
   const router = useRouter();
   const { role } = useRole();
-
-  // Mode from client env
-  const paymentMode = process.env.NEXT_PUBLIC_PAYMENT_MODE || "mock";
-  const demoRepoUrl =
-    process.env.NEXT_PUBLIC_DEMO_REPO_URL ||
-    "https://github.com/facebook/react";
 
   // Funding state
   const [fundingModalOpen, setFundingModalOpen] = useState(false);
@@ -564,7 +565,7 @@ export function MilestoneActionPanel({ milestone, project }: MilestoneActionPane
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" />
-                      <span>Gemini 2.0 Flash evaluating {JSON.parse(milestone.criteria || "[]").length} criteria</span>
+                      <span>AI evaluating {JSON.parse(milestone.criteria || "[]").length} criteria against static evidence</span>
                     </div>
                   </div>
                 </div>

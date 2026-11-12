@@ -114,7 +114,7 @@ export default async function MilestonePage({ params }: MilestonePageProps) {
 
           <div className="lg:border-l lg:border-border/80 lg:pl-8 flex flex-col justify-center shrink-0">
             <span className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-              Milestone Escrow Value
+              Milestone Value
             </span>
             <span className="text-3xl font-black text-foreground num-tabular mt-1">
               {formatCurrency(milestone.amount)}
@@ -130,6 +130,8 @@ export default async function MilestonePage({ params }: MilestonePageProps) {
       <MilestoneActionPanel
         milestone={milestone as any}
         project={milestone.project as any}
+        paymentMode={process.env.PAYMENT_MODE || "mock"}
+        demoRepoUrl={process.env.DEMO_REPO_URL || "https://github.com/facebook/react"}
       />
 
       {/* ACCEPTANCE CRITERIA LIST & VERIFICATION REPORT ROW */}

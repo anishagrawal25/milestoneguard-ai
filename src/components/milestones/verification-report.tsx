@@ -198,7 +198,7 @@ export function VerificationReport({ submissions }: VerificationReportProps) {
                   : "Significant Criteria Missing"}
               </h3>
               <p className="text-xs text-muted-foreground">
-                Verified {formatRelativeTime(currentVerification.createdAt)} using Gemini 2.0 Flash AST inspection.
+                Verified {formatRelativeTime(currentVerification.createdAt)} via static code evidence analysis.
               </p>
             </div>
           </div>
@@ -376,8 +376,8 @@ export function VerificationReport({ submissions }: VerificationReportProps) {
             <span>Static analysis of repository contents; code is not executed.</span>
           </div>
 
-          <span className="text-[11px] font-mono">
-            Model: Gemini 2.0 Flash
+          <span className="text-[11px] font-mono text-muted-foreground">
+            Static analysis of repository contents; code is not executed.
           </span>
         </div>
       </CardContent>

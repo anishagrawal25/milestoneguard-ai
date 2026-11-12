@@ -63,7 +63,7 @@ export default function LandingPage() {
                 <Sparkles className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
                 <span>PayPal AI Hackathon 2026</span>
                 <span className="text-muted-foreground">•</span>
-                <span className="font-semibold text-teal-600 dark:text-teal-400">Gemini 2.0 Flash Verified</span>
+                <span className="font-semibold text-teal-600 dark:text-teal-400">Evidence-Based Verification</span>
               </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.12]">
@@ -101,7 +101,7 @@ export default function LandingPage() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span>Static AST & File Tree Analysis</span>
+                  <span>Static analysis of repository contents; code is not executed</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 className="h-4 w-4 text-emerald-500" />
@@ -209,9 +209,9 @@ export default function LandingPage() {
                   </div>
 
                   <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-[11px] text-muted-foreground">
-                    <span>Static AST inspection</span>
+                    <span>Static analysis of repository contents; code is not executed</span>
                     <span className="text-teal-600 dark:text-teal-400 font-medium">
-                      Code is not executed
+                      Automated Verification
                     </span>
                   </div>
                 </div>

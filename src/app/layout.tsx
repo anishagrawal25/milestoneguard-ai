@@ -23,11 +23,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const paymentMode = process.env.PAYMENT_MODE || "mock";
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans min-h-screen flex flex-col bg-background text-foreground antialiased`}>
         <RoleProvider>
-          <Header />
+          <Header paymentMode={paymentMode} />
           <div className="flex-1 flex flex-col">{children}</div>
           <Footer />
           <Toaster position="top-right" richColors />
