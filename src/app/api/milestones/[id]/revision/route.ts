@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { enforceRole } from "@/lib/auth-guard";
+import { parseJsonBody } from "@/lib/parse-json";
 
 const paramsSchema = z.object({
   id: z.string().min(1, "Milestone ID required"),
@@ -12,16 +13,18 @@ const revisionSchema = z.object({
 });
 
 export async function POST(
-  req: Request,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   // Server-side role guard: only clients can request revisions
   const roleCheck = enforceRole("client", req);
   if (roleCheck) return roleCheck;
 
+  const { data: body, errorResponse } = await parseJsonBody(req);
+  if (errorResponse) return errorResponse;
+
   try {
     const { id: milestoneId } = paramsSchema.parse(params);
-    const body = await req.json();
     const { note } = revisionSchema.parse(body);
 
     const milestone = await prisma.milestone.findUnique({

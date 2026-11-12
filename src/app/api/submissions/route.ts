@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { fetchGitHubEvidence, fetchLiveUrlEvidence } from "@/lib/evidence-fetcher";
 import { enforceRole } from "@/lib/auth-guard";
+import { parseJsonBody } from "@/lib/parse-json";
 
 const submissionSchema = z.object({
   milestoneId: z.string().min(1, "Milestone ID is required"),
@@ -10,13 +11,15 @@ const submissionSchema = z.object({
   type: z.enum(["github", "url"]).default("github"),
 });
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   // Server-side role guard: only freelancers can submit work
   const roleCheck = enforceRole("freelancer", req);
   if (roleCheck) return roleCheck;
 
+  const { data: body, errorResponse } = await parseJsonBody(req);
+  if (errorResponse) return errorResponse;
+
   try {
-    const body = await req.json();
     const { milestoneId, url, type } = submissionSchema.parse(body);
 
     // Verify milestone existence

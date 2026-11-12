@@ -1,20 +1,23 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { createPayPalOrder } from "@/lib/paypal";
 import { enforceRole } from "@/lib/auth-guard";
+import { parseJsonBody } from "@/lib/parse-json";
 
 const createOrderSchema = z.object({
   milestoneId: z.string().min(1, "Milestone ID is required"),
 });
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   // Server-side role guard: only clients can initiate milestone funding orders
   const roleCheck = enforceRole("client", req);
   if (roleCheck) return roleCheck;
 
+  const { data: body, errorResponse } = await parseJsonBody(req);
+  if (errorResponse) return errorResponse;
+
   try {
-    const body = await req.json();
     const { milestoneId } = createOrderSchema.parse(body);
 
     // Read amount STRICTLY from database, never trust client input

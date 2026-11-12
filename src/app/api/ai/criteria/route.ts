@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { parseJsonBody } from "@/lib/parse-json";
 
 const criteriaRequestSchema = z.object({
   title: z.string().min(2, "Milestone title is required"),
@@ -84,9 +85,11 @@ Make each criterion specific, realistic, and verifiable in code.`;
   return criteriaResponseSchema.parse(parsed);
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const { data: body, errorResponse } = await parseJsonBody(req);
+  if (errorResponse) return errorResponse;
+
   try {
-    const body = await req.json();
     const { title, description } = criteriaRequestSchema.parse(body);
 
     const apiKey = process.env.GEMINI_API_KEY;

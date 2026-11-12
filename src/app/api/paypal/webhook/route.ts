@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { verifyPayPalWebhookSignature } from "@/lib/paypal";
+import { parseJsonBody } from "@/lib/parse-json";
 
 const webhookHeaderSchema = z.object({
   "paypal-auth-algo": z.string().optional().default(""),
@@ -18,7 +19,7 @@ const webhookBodySchema = z.object({
   resource: z.record(z.any()).optional(),
 });
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const webhookId = process.env.PAYPAL_WEBHOOK_ID;
 
@@ -31,6 +32,9 @@ export async function POST(req: Request) {
       );
     }
 
+    const { data: bodyJson, errorResponse } = await parseJsonBody(req);
+    if (errorResponse) return errorResponse;
+
     const headersRaw = {
       "paypal-auth-algo": req.headers.get("paypal-auth-algo") || "",
       "paypal-cert-url": req.headers.get("paypal-cert-url") || "",
@@ -40,7 +44,6 @@ export async function POST(req: Request) {
     };
 
     const headers = webhookHeaderSchema.parse(headersRaw);
-    const bodyJson = await req.json();
     const body = webhookBodySchema.parse(bodyJson);
 
     // Verify webhook signature with PayPal API

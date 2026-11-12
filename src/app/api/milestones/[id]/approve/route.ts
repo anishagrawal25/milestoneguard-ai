@@ -1,20 +1,27 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { createPayPalPayout } from "@/lib/paypal";
 import { enforceRole } from "@/lib/auth-guard";
+import { parseJsonBody } from "@/lib/parse-json";
 
 const paramsSchema = z.object({
   id: z.string().min(1, "Milestone ID required"),
 });
 
 export async function POST(
-  req: Request,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   // Server-side role guard: only clients can approve deliverables and trigger payouts
   const roleCheck = enforceRole("client", req);
   if (roleCheck) return roleCheck;
+
+  const contentType = req.headers.get("content-type");
+  if (contentType?.includes("application/json")) {
+    const { errorResponse } = await parseJsonBody(req);
+    if (errorResponse) return errorResponse;
+  }
 
   try {
     const { id: milestoneId } = paramsSchema.parse(params);

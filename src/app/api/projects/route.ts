@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { enforceRole } from "@/lib/auth-guard";
+import { parseJsonBody } from "@/lib/parse-json";
 
 const createProjectSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
@@ -24,13 +25,15 @@ const createProjectSchema = z.object({
     .min(1, "At least one milestone is required"),
 });
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   // Server-side role guard: only clients can create project contracts
   const roleCheck = enforceRole("client", req);
   if (roleCheck) return roleCheck;
 
+  const { data: body, errorResponse } = await parseJsonBody(req);
+  if (errorResponse) return errorResponse;
+
   try {
-    const body = await req.json();
     const validated = createProjectSchema.parse(body);
 
     const project = await prisma.project.create({

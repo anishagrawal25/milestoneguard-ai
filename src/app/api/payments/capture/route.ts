@@ -1,21 +1,24 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { capturePayPalOrder } from "@/lib/paypal";
 import { enforceRole } from "@/lib/auth-guard";
+import { parseJsonBody } from "@/lib/parse-json";
 
 const captureSchema = z.object({
   milestoneId: z.string().min(1, "Milestone ID is required"),
   orderId: z.string().min(1, "PayPal Order ID is required"),
 });
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   // Server-side role guard: only clients can capture milestone payments
   const roleCheck = enforceRole("client", req);
   if (roleCheck) return roleCheck;
 
+  const { data: body, errorResponse } = await parseJsonBody(req);
+  if (errorResponse) return errorResponse;
+
   try {
-    const body = await req.json();
     const { milestoneId, orderId } = captureSchema.parse(body);
 
     const milestone = await prisma.milestone.findUnique({
