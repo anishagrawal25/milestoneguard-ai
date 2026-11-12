@@ -123,7 +123,7 @@ export function VerificationReport({ submissions }: VerificationReportProps) {
                 href={currentVerification.submissionUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="font-mono text-foreground hover:underline inline-flex items-center gap-1 font-semibold"
+                className="font-mono text-foreground hover:underline inline-flex items-center gap-1 font-semibold truncate max-w-[220px] sm:max-w-none align-bottom"
               >
                 {currentVerification.submissionUrl}
                 <ExternalLink className="h-3 w-3" />
@@ -329,6 +329,7 @@ export function VerificationReport({ submissions }: VerificationReportProps) {
                           </span>
                           <button
                             onClick={() => copySnippet(item.evidence, idx)}
+                            aria-label="Copy code evidence excerpt"
                             className="inline-flex items-center gap-1 hover:text-foreground transition-colors font-sans text-[11px]"
                           >
                             {copiedIndex === idx ? (

@@ -41,25 +41,19 @@ function Badge({ className, variant, ...props }: BadgeProps) {
   );
 }
 
+import { StatusPill, PillVariant } from "./status-pill";
+
 export function MilestoneStatusBadge({ status }: { status: string }) {
-  switch (status) {
-    case "Created":
-      return <Badge variant="created">Draft / Created</Badge>;
-    case "Funded":
-      return <Badge variant="funded">Funded with PayPal</Badge>;
-    case "Submitted":
-      return <Badge variant="verified">Work Submitted</Badge>;
-    case "Verified":
-      return <Badge variant="verified">AI Verified</Badge>;
-    case "Approved":
-      return <Badge variant="paidout">Approved</Badge>;
-    case "PaidOut":
-      return <Badge variant="paidout">Paid Out</Badge>;
-    case "RevisionRequested":
-      return <Badge variant="revision">Revision Requested</Badge>;
-    default:
-      return <Badge variant="secondary">{status}</Badge>;
-  }
+  const map: Record<string, PillVariant> = {
+    Created: "created",
+    Funded: "funded",
+    Submitted: "submitted",
+    Verified: "verified",
+    Approved: "approved",
+    PaidOut: "paidout",
+    RevisionRequested: "revision",
+  };
+  return <StatusPill variant={map[status] || "created"} />;
 }
 
 export { Badge, badgeVariants };

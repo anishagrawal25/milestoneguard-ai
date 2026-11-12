@@ -3,22 +3,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Breadcrumbs } from "@/components/navigation/breadcrumbs";
-import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Badge, MilestoneStatusBadge } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badge";
 import { HorizontalStatusStepper } from "@/components/milestones/horizontal-status-stepper";
 import { MilestoneActionPanel } from "@/components/milestones/milestone-action-panel";
 import { VerificationReport } from "@/components/milestones/verification-report";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { StatusPill } from "@/components/ui/status-pill";
+import { formatCurrency } from "@/lib/utils";
 import {
   FileCheck2,
-  DollarSign,
-  Calendar,
-  User,
-  ShieldCheck,
-  CheckCircle2,
-  ArrowLeft,
-  ChevronLeft,
   Sparkles,
 } from "lucide-react";
 
@@ -72,7 +65,7 @@ export default async function MilestonePage({ params }: MilestonePageProps) {
   const latestVerification = latestSubmission?.verifications[0];
 
   return (
-    <div className="container py-8 space-y-8 max-w-6xl">
+    <div className="container py-8 space-y-6 max-w-6xl">
       <Breadcrumbs
         items={[
           { label: "Dashboard", href: "/dashboard" },
@@ -81,52 +74,10 @@ export default async function MilestonePage({ params }: MilestonePageProps) {
         ]}
       />
 
-      {/* HORIZONTAL STATUS STEPPER AT TOP */}
+      {/* 1. HORIZONTAL STATUS STEPPER AT TOP */}
       <HorizontalStatusStepper currentStatus={milestone.status} />
 
-      {/* MILESTONE HEADER & OVERVIEW */}
-      <div className="rounded-3xl border border-border/80 bg-card p-6 sm:p-8 shadow-card">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          <div className="space-y-3 max-w-3xl">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Milestone #{milestone.order}
-              </span>
-              <MilestoneStatusBadge status={milestone.status} />
-              <span className="text-xs text-muted-foreground">
-                In project:{" "}
-                <Link
-                  href={`/projects/${milestone.projectId}`}
-                  className="font-semibold text-foreground hover:underline"
-                >
-                  {milestone.project.title}
-                </Link>
-              </span>
-            </div>
-
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
-              {milestone.title}
-            </h1>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {milestone.description}
-            </p>
-          </div>
-
-          <div className="lg:border-l lg:border-border/80 lg:pl-8 flex flex-col justify-center shrink-0">
-            <span className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-              Milestone Value
-            </span>
-            <span className="text-3xl font-black text-foreground num-tabular mt-1">
-              {formatCurrency(milestone.amount)}
-            </span>
-            <span className="text-[11px] text-muted-foreground mt-1">
-              Recipient: {milestone.project.freelancerEmail}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* ROLE-BASED ACTION PANEL */}
+      {/* 2. SINGLE PROMINENT ACTION PANEL & HERO */}
       <MilestoneActionPanel
         milestone={milestone as any}
         project={milestone.project as any}
@@ -134,33 +85,33 @@ export default async function MilestonePage({ params }: MilestonePageProps) {
         demoRepoUrl={process.env.DEMO_REPO_URL || "https://github.com/facebook/react"}
       />
 
-      {/* ACCEPTANCE CRITERIA LIST & VERIFICATION REPORT ROW */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      {/* 3. AGREED CRITERIA & EVIDENCE VERIFICATION REPORT BELOW */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pt-2">
         {/* Left Column: Acceptance Criteria Card */}
         <div className="lg:col-span-5 space-y-4">
           <Card className="rounded-2xl border-border/80 shadow-card">
-            <CardHeader className="p-6 pb-4">
+            <CardHeader className="p-6 pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
                   <FileCheck2 className="h-4 w-4 text-primary" />
                   <span>Acceptance Criteria</span>
                 </CardTitle>
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-xs font-mono">
                   {criteriaList.length} Items
                 </Badge>
               </div>
-              <CardDescription>
+              <CardDescription className="text-xs">
                 Agreed technical specifications required for completion and payout release.
               </CardDescription>
             </CardHeader>
 
-            <CardContent className="p-6 pt-0 space-y-3">
+            <CardContent className="p-6 pt-0 space-y-2.5">
               {criteriaList.map((criterion, idx) => (
                 <div
                   key={idx}
-                  className="p-3 rounded-xl bg-secondary/50 border border-border/60 text-xs space-y-1"
+                  className="p-3 rounded-xl bg-secondary/50 border border-border/60 text-xs"
                 >
-                  <div className="flex items-start gap-2">
+                  <div className="flex items-start gap-2.5">
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary font-bold text-[10px] mt-0.5">
                       {idx + 1}
                     </span>
@@ -187,7 +138,7 @@ export default async function MilestonePage({ params }: MilestonePageProps) {
                 No Verification Report Yet
               </h3>
               <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1 leading-relaxed">
-                Once {milestone.project.freelancerName} submits the GitHub repository or live URL, Gemini AI will run static code analysis and produce an evidence report here.
+                Once {milestone.project.freelancerName} submits the GitHub repository or live URL, AI will run static code evidence analysis and produce an objective report here.
               </p>
             </Card>
           )}

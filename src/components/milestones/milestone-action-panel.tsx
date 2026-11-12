@@ -24,6 +24,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { StatusPill } from "@/components/ui/status-pill";
 import {
   Dialog,
   DialogContent,
@@ -278,14 +279,39 @@ export function MilestoneActionPanel({
   if (milestone.status === "PaidOut" || milestone.status === "Approved") {
     return (
       <Card className="rounded-2xl border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/40 dark:bg-emerald-950/20 shadow-card">
-        <CardContent className="p-6 space-y-4">
+        <CardContent className="p-6 space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-4 border-b border-emerald-200/60 dark:border-emerald-800/60">
+            <div className="space-y-1 max-w-2xl">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-xs font-mono">
+                  Milestone #{milestone.order}
+                </Badge>
+                <StatusPill variant="paidout" />
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+                {milestone.title}
+              </h2>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {milestone.description}
+              </p>
+            </div>
+            <div className="sm:text-right shrink-0">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold block">
+                Amount Released
+              </span>
+              <span className="text-2xl sm:text-3xl font-extrabold text-foreground num-tabular">
+                {formatCurrency(latestPayout?.amount || milestone.amount)}
+              </span>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold">
                 <CheckCircle2 className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-foreground">
+                <h3 className="text-sm font-bold text-foreground">
                   Milestone Completed & Paid Out
                 </h3>
                 <p className="text-xs text-muted-foreground">
@@ -329,13 +355,38 @@ export function MilestoneActionPanel({
     if (role === "client") {
       return (
         <Card className="rounded-2xl border-indigo-200 dark:border-indigo-800/40 bg-gradient-to-br from-indigo-50/50 to-background dark:from-indigo-950/30 dark:to-card shadow-card">
-          <CardContent className="p-6 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <CardContent className="p-6 space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-4 border-b border-border/60">
+              <div className="space-y-1 max-w-2xl">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs font-mono">
+                    Milestone #{milestone.order}
+                  </Badge>
+                  <StatusPill variant="created" />
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+                  {milestone.title}
+                </h2>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {milestone.description}
+                </p>
+              </div>
+              <div className="sm:text-right shrink-0">
+                <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold block">
+                  Milestone Value
+                </span>
+                <span className="text-2xl sm:text-3xl font-extrabold text-foreground num-tabular">
+                  {formatCurrency(milestone.amount)}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-1">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-indigo-600 animate-ping" />
-                  <h3 className="text-base font-bold text-foreground">
-                    Fund Milestone {milestone.order}
+                  <h3 className="text-sm font-bold text-foreground">
+                    Next Action: Fund Milestone with PayPal
                   </h3>
                 </div>
                 <p className="text-xs text-muted-foreground max-w-lg leading-relaxed">
@@ -450,17 +501,44 @@ export function MilestoneActionPanel({
       // Freelancer sees waiting banner
       return (
         <Card className="rounded-2xl border-dashed border-border/80 bg-muted/20">
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="h-10 w-10 rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-600 flex items-center justify-center shrink-0">
-              <AlertTriangle className="h-5 w-5" />
+          <CardContent className="p-6 space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-4 border-b border-border/60">
+              <div className="space-y-1 max-w-2xl">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs font-mono">
+                    Milestone #{milestone.order}
+                  </Badge>
+                  <StatusPill variant="created" />
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+                  {milestone.title}
+                </h2>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {milestone.description}
+                </p>
+              </div>
+              <div className="sm:text-right shrink-0">
+                <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold block">
+                  Milestone Value
+                </span>
+                <span className="text-2xl sm:text-3xl font-extrabold text-foreground num-tabular">
+                  {formatCurrency(milestone.amount)}
+                </span>
+              </div>
             </div>
-            <div>
-              <h3 className="text-sm font-bold text-foreground">
-                Awaiting Client Funding
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                {project.clientName} has not yet funded this milestone ({formatCurrency(milestone.amount)}). You will be notified when funds are committed so you can begin work safely.
-              </p>
+
+            <div className="flex items-center gap-4 pt-1">
+              <div className="h-10 w-10 rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-600 flex items-center justify-center shrink-0">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">
+                  Awaiting Client Funding
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {project.clientName} has not yet funded this milestone ({formatCurrency(milestone.amount)}). You will be notified when funds are committed so you can begin work safely.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -473,34 +551,37 @@ export function MilestoneActionPanel({
     if (role === "freelancer") {
       return (
         <Card className="rounded-2xl border-teal-200 dark:border-teal-800/40 bg-gradient-to-br from-teal-50/40 to-background dark:from-teal-950/30 dark:to-card shadow-card">
-          <CardHeader className="p-6 pb-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-300 flex items-center justify-center">
-                  <Github className="h-4 w-4" />
+          <CardContent className="p-6 space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-4 border-b border-border/60">
+              <div className="space-y-1 max-w-2xl">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs font-mono">
+                    Milestone #{milestone.order}
+                  </Badge>
+                  <StatusPill variant={milestone.status === "RevisionRequested" ? "revision" : "funded"} />
                 </div>
-                <div>
-                  <CardTitle className="text-base">
-                    Submit Deliverable for AI Verification
-                  </CardTitle>
-                  <CardDescription>
-                    Provide your GitHub repository or live URL to run static evidence verification.
-                  </CardDescription>
-                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+                  {milestone.title}
+                </h2>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {milestone.description}
+                </p>
               </div>
-
-              <Badge variant="funded">
-                Funded: {formatCurrency(milestone.amount)}
-              </Badge>
+              <div className="sm:text-right shrink-0">
+                <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold block">
+                  Funded Amount
+                </span>
+                <span className="text-2xl sm:text-3xl font-extrabold text-foreground num-tabular">
+                  {formatCurrency(milestone.amount)}
+                </span>
+              </div>
             </div>
-          </CardHeader>
 
-          <CardContent className="p-6 pt-0 space-y-4">
-            <form onSubmit={handleRunVerification} className="space-y-4">
+            <form onSubmit={handleRunVerification} className="space-y-4 pt-1">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-foreground">
-                    Submission Source URL
+                    Next Action: Submit GitHub Repository or Live URL for AI Verification
                   </label>
 
                   {/* 1-Click Demo sample button */}
@@ -578,20 +659,47 @@ export function MilestoneActionPanel({
       // Client sees waiting for submission banner
       return (
         <Card className="rounded-2xl border-border/80 bg-secondary/30">
-          <CardContent className="p-6 flex items-center justify-between gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
-                <h3 className="text-sm font-bold text-foreground">
-                  Milestone Funded ({formatCurrency(milestone.amount)})
-                </h3>
+          <CardContent className="p-6 space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-4 border-b border-border/60">
+              <div className="space-y-1 max-w-2xl">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs font-mono">
+                    Milestone #{milestone.order}
+                  </Badge>
+                  <StatusPill variant={milestone.status === "RevisionRequested" ? "revision" : "funded"} />
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+                  {milestone.title}
+                </h2>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {milestone.description}
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Payment has been captured into the platform merchant account. Waiting for {project.freelancerName} to submit code deliverables for AI verification.
-              </p>
+              <div className="sm:text-right shrink-0">
+                <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold block">
+                  Funded Balance
+                </span>
+                <span className="text-2xl sm:text-3xl font-extrabold text-foreground num-tabular">
+                  {formatCurrency(milestone.amount)}
+                </span>
+              </div>
             </div>
 
-            <Badge variant="funded">In Progress</Badge>
+            <div className="flex items-center justify-between gap-4 pt-1">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
+                  <h3 className="text-sm font-bold text-foreground">
+                    Awaiting Freelancer Submission
+                  </h3>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Payment is protected in the platform merchant account. Waiting for {project.freelancerName} to submit code deliverables for AI verification.
+                </p>
+              </div>
+
+              <Badge variant="funded">In Progress</Badge>
+            </div>
           </CardContent>
         </Card>
       );
@@ -603,13 +711,38 @@ export function MilestoneActionPanel({
     if (role === "client") {
       return (
         <Card className="rounded-2xl border-violet-200 dark:border-violet-800/40 bg-gradient-to-br from-violet-50/40 to-background dark:from-violet-950/30 dark:to-card shadow-card">
-          <CardContent className="p-6 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <CardContent className="p-6 space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-4 border-b border-border/60">
+              <div className="space-y-1 max-w-2xl">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs font-mono">
+                    Milestone #{milestone.order}
+                  </Badge>
+                  <StatusPill variant="verified" />
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+                  {milestone.title}
+                </h2>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {milestone.description}
+                </p>
+              </div>
+              <div className="sm:text-right shrink-0">
+                <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold block">
+                  Payout on Approval
+                </span>
+                <span className="text-2xl sm:text-3xl font-extrabold text-foreground num-tabular">
+                  {formatCurrency(milestone.amount)}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-1">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-violet-600 dark:text-violet-400" />
-                  <h3 className="text-base font-bold text-foreground">
-                    Review Verification Report & Release Payment
+                  <h3 className="text-sm font-bold text-foreground">
+                    Next Action: Review Report & Release Payment
                   </h3>
                 </div>
                 <p className="text-xs text-muted-foreground max-w-xl leading-relaxed">
@@ -745,20 +878,47 @@ export function MilestoneActionPanel({
       // Freelancer view during client review
       return (
         <Card className="rounded-2xl border-violet-200 dark:border-violet-800/40 bg-violet-50/20 dark:bg-violet-950/20">
-          <CardContent className="p-6 flex items-center justify-between gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-violet-600 dark:text-violet-400" />
-                <h3 className="text-sm font-bold text-foreground">
-                  Verification Complete — Under Client Review
-                </h3>
+          <CardContent className="p-6 space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-4 border-b border-border/60">
+              <div className="space-y-1 max-w-2xl">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs font-mono">
+                    Milestone #{milestone.order}
+                  </Badge>
+                  <StatusPill variant="verified" />
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+                  {milestone.title}
+                </h2>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {milestone.description}
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Your submission has been verified by Gemini AI. {project.clientName} is currently reviewing the evidence report. You will receive an automated payout to {project.freelancerEmail} upon approval.
-              </p>
+              <div className="sm:text-right shrink-0">
+                <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold block">
+                  Expected Payout
+                </span>
+                <span className="text-2xl sm:text-3xl font-extrabold text-foreground num-tabular">
+                  {formatCurrency(milestone.amount)}
+                </span>
+              </div>
             </div>
 
-            <Badge variant="verified">Under Review</Badge>
+            <div className="flex items-center justify-between gap-4 pt-1">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                  <h3 className="text-sm font-bold text-foreground">
+                    Verification Complete — Awaiting Client Approval
+                  </h3>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Your submission has been verified by AI. {project.clientName} is currently reviewing the evidence report. You will receive an automated payout to {project.freelancerEmail} upon approval.
+                </p>
+              </div>
+
+              <Badge variant="verified">Under Review</Badge>
+            </div>
           </CardContent>
         </Card>
       );

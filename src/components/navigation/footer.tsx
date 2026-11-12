@@ -65,6 +65,7 @@ export function Footer() {
               href="https://developer.paypal.com"
               target="_blank"
               rel="noreferrer"
+              aria-label="Visit PayPal Developer Documentation"
               className="hover:text-foreground inline-flex items-center gap-1"
             >
               PayPal Docs

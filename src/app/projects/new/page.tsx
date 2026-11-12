@@ -412,6 +412,7 @@ export default function NewProjectPage() {
                       variant="ghost"
                       size="icon-sm"
                       onClick={() => removeMilestone(mIdx)}
+                      aria-label={`Delete Milestone ${m.order}`}
                       className="text-muted-foreground hover:text-rose-600"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -502,6 +503,7 @@ export default function NewProjectPage() {
                           <button
                             type="button"
                             onClick={() => removeCriterion(mIdx, cIdx)}
+                            aria-label="Remove acceptance criterion"
                             className="p-1 rounded-lg text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 transition-colors"
                           >
                             <X className="h-3.5 w-3.5" />
