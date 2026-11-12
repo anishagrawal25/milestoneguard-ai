@@ -19,8 +19,10 @@ export async function getPayPalAccessToken(): Promise<string> {
   });
 
   if (!res.ok) {
+    const debugId = res.headers.get("paypal-debug-id") || "N/A";
     const errorText = await res.text();
-    throw new Error(`Failed to get PayPal access token (${res.status}): ${errorText}`);
+    console.error(`[PayPal Auth Error] Status: ${res.status}, Debug ID: ${debugId}`);
+    throw new Error(`Failed to obtain PayPal OAuth token (Debug ID: ${debugId})`);
   }
 
   const data = await res.json();
@@ -58,8 +60,9 @@ export async function createPayPalOrder(
   });
 
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`Failed to create PayPal order (${res.status}): ${errorText}`);
+    const debugId = res.headers.get("paypal-debug-id") || "N/A";
+    console.error(`[PayPal Create Order Error] Status: ${res.status}, Debug ID: ${debugId}`);
+    throw new Error(`Failed to create PayPal order (Debug ID: ${debugId})`);
   }
 
   const data = await res.json();
@@ -83,8 +86,9 @@ export async function capturePayPalOrder(orderId: string): Promise<{
   });
 
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`Failed to capture PayPal order (${res.status}): ${errorText}`);
+    const debugId = res.headers.get("paypal-debug-id") || "N/A";
+    console.error(`[PayPal Capture Error] Status: ${res.status}, Debug ID: ${debugId}`);
+    throw new Error(`Failed to capture PayPal order (Debug ID: ${debugId})`);
   }
 
   const data = await res.json();
@@ -99,18 +103,20 @@ export async function capturePayPalOrder(orderId: string): Promise<{
 }
 
 export async function createPayPalPayout(
+  milestoneId: string,
   recipientEmail: string,
   amount: number,
   currency: string = "USD",
   note: string = "Milestone payout"
 ): Promise<{ batchId: string; status: string }> {
   const token = await getPayPalAccessToken();
-  const batchId = `MG_PAYOUT_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  // Unique per milestone and deterministic to enforce idempotency in PayPal Payouts engine
+  const senderBatchId = `MG_PAYOUT_M_${milestoneId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
   const payload = {
     sender_batch_header: {
-      sender_batch_id: batchId,
-      email_subject: "You received a milestone payout from MilestoneGuard AI",
+      sender_batch_id: senderBatchId,
+      email_subject: "Milestone payment release via MilestoneGuard AI",
       email_message: note,
     },
     items: [
@@ -121,7 +127,7 @@ export async function createPayPalPayout(
           currency,
         },
         note,
-        sender_item_id: `ITEM_${Date.now()}`,
+        sender_item_id: `ITEM_${milestoneId.replace(/[^a-zA-Z0-9_-]/g, "")}`,
         receiver: recipientEmail,
       },
     ],
@@ -137,13 +143,14 @@ export async function createPayPalPayout(
   });
 
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`Failed to execute PayPal payout (${res.status}): ${errorText}`);
+    const debugId = res.headers.get("paypal-debug-id") || "N/A";
+    console.error(`[PayPal Payout Error] Status: ${res.status}, Debug ID: ${debugId}`);
+    throw new Error(`Failed to execute PayPal payout (Debug ID: ${debugId})`);
   }
 
   const data = await res.json();
   return {
-    batchId: data.batch_header?.payout_batch_id || batchId,
+    batchId: data.batch_header?.payout_batch_id || senderBatchId,
     status: data.batch_header?.batch_status || "PENDING",
   };
 }

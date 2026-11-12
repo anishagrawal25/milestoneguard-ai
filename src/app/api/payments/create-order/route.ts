@@ -2,17 +2,22 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { createPayPalOrder } from "@/lib/paypal";
+import { enforceRole } from "@/lib/auth-guard";
 
 const createOrderSchema = z.object({
   milestoneId: z.string().min(1, "Milestone ID is required"),
 });
 
 export async function POST(req: Request) {
+  // Server-side role guard: only clients can initiate milestone funding orders
+  const roleCheck = enforceRole("client", req);
+  if (roleCheck) return roleCheck;
+
   try {
     const body = await req.json();
     const { milestoneId } = createOrderSchema.parse(body);
 
-    // Read amount from DATABASE, never trust client
+    // Read amount STRICTLY from database, never trust client input
     const milestone = await prisma.milestone.findUnique({
       where: { id: milestoneId },
       include: { project: true },
@@ -27,7 +32,7 @@ export async function POST(req: Request) {
 
     if (milestone.status !== "Created") {
       return NextResponse.json(
-        { success: false, error: `Milestone is already in status '${milestone.status}'` },
+        { success: false, error: `Milestone #${milestone.order} is already '${milestone.status}'. Cannot create new order.` },
         { status: 400 }
       );
     }

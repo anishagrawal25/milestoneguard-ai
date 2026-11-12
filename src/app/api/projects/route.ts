@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { enforceRole } from "@/lib/auth-guard";
 
 const createProjectSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
@@ -24,6 +25,10 @@ const createProjectSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  // Server-side role guard: only clients can create project contracts
+  const roleCheck = enforceRole("client", req);
+  if (roleCheck) return roleCheck;
+
   try {
     const body = await req.json();
     const validated = createProjectSchema.parse(body);
@@ -64,7 +69,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, errors: error.errors },
+        { success: false, error: "Validation error", errors: error.errors },
         { status: 400 }
       );
     }

@@ -296,7 +296,7 @@ export default function LandingPage() {
         <div className="container space-y-12">
           <div className="text-center max-w-2xl mx-auto space-y-3">
             <h2 className="text-xs uppercase tracking-widest font-bold text-teal-600 dark:text-teal-400">
-              Why It's Different
+              Why It&apos;s Different
             </h2>
             <h3 className="text-3xl font-bold tracking-tight text-foreground">
               Built for Certainty, Not Guesswork

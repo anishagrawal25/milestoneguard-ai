@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { capturePayPalOrder } from "@/lib/paypal";
+import { enforceRole } from "@/lib/auth-guard";
 
 const captureSchema = z.object({
   milestoneId: z.string().min(1, "Milestone ID is required"),
@@ -9,6 +10,10 @@ const captureSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  // Server-side role guard: only clients can capture milestone payments
+  const roleCheck = enforceRole("client", req);
+  if (roleCheck) return roleCheck;
+
   try {
     const body = await req.json();
     const { milestoneId, orderId } = captureSchema.parse(body);
@@ -28,20 +33,33 @@ export async function POST(req: Request) {
       );
     }
 
-    // Idempotency check: if milestone is already Funded and payment is COMPLETED, return early
-    const existingCompletedPayment = milestone.payments.find(
-      (p) => p.status === "COMPLETED" && (p.paypalOrderId === orderId || p.captureId)
-    );
+    // Double-funding & idempotency guard
+    if (milestone.status !== "Created") {
+      // Check if this exact order was already captured (idempotent replay)
+      const existingPayment = milestone.payments.find(
+        (p) => p.paypalOrderId === orderId && p.status === "COMPLETED"
+      );
 
-    if (existingCompletedPayment && milestone.status !== "Created") {
-      return NextResponse.json({
-        success: true,
-        alreadyCaptured: true,
-        captureId: existingCompletedPayment.captureId,
-        orderId,
-        status: "COMPLETED",
-        milestoneId: milestone.id,
-      });
+      if (existingPayment) {
+        return NextResponse.json({
+          success: true,
+          alreadyCaptured: true,
+          captureId: existingPayment.captureId,
+          orderId,
+          status: "COMPLETED",
+          milestoneId: milestone.id,
+          amount: milestone.amount,
+        });
+      }
+
+      // If milestone is already funded or beyond, reject new payment capture
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Milestone #${milestone.order} is already ${milestone.status}. Additional funding is blocked.`,
+        },
+        { status: 400 }
+      );
     }
 
     const paymentMode = process.env.PAYMENT_MODE || "mock";
@@ -96,13 +114,13 @@ export async function POST(req: Request) {
       });
     }
 
-    // Update milestone status to Funded
+    // Transition milestone status to Funded
     await prisma.milestone.update({
       where: { id: milestone.id },
       data: { status: "Funded" },
     });
 
-    // Log Event
+    // Write Event
     await prisma.event.create({
       data: {
         projectId: milestone.projectId,

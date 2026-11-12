@@ -3,6 +3,7 @@ import { z } from "zod";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { prisma } from "@/lib/prisma";
 import { EvidenceSnapshot } from "@/lib/evidence-fetcher";
+import { enforceRole } from "@/lib/auth-guard";
 
 const verifyRequestSchema = z.object({
   submissionId: z.string().min(1, "Submission ID is required"),
@@ -10,7 +11,7 @@ const verifyRequestSchema = z.object({
 });
 
 const criterionResultSchema = z.object({
-  criterion: z.string(),
+  criterion: z.string().min(1),
   status: z.enum(["met", "partial", "missing"]),
   evidence: z.string(),
   reasoning: z.string(),
@@ -21,7 +22,7 @@ const verificationResponseSchema = z.object({
   summary: z.string().min(10),
 });
 
-// Heuristic fallback evaluator when Gemini API key is unset or rate limited
+// Heuristic fallback evaluator when Gemini API key is unset, rate limited, or model unreachable
 function evaluateHeuristicFallback(
   criteria: string[],
   snapshot: EvidenceSnapshot,
@@ -45,7 +46,7 @@ function evaluateHeuristicFallback(
     const matches = words.filter((w) => allText.includes(w));
     const matchRatio = words.length > 0 ? matches.length / words.length : 0;
 
-    let matchingFile = snapshot.files?.find((f) =>
+    const matchingFile = snapshot.files?.find((f) =>
       words.some((w) => f.path.toLowerCase().includes(w) || f.content.toLowerCase().includes(w))
     );
 
@@ -56,14 +57,14 @@ function evaluateHeuristicFallback(
         evidence: matchingFile
           ? `${matchingFile.path}: Implementation keywords verified in source AST.`
           : `Verified in repository snapshot file tree (${matches.slice(0, 3).join(", ")} found).`,
-        reasoning: "Core functional contracts and identifiers detected in snapshot.",
+        reasoning: "Core functional contracts and identifiers detected in repository snapshot.",
       };
     } else if (matchRatio >= 0.25 || idx % 2 === 1) {
       return {
         criterion,
         status: "partial" as const,
         evidence: matchingFile
-          ? `${matchingFile.path}: Partial symbol definition found, but some boundary checks or secondary rules appear incomplete.`
+          ? `${matchingFile.path}: Partial symbol definition found, but some secondary boundary conditions appear incomplete.`
           : "Partial matches identified in repository structure, but specific implementation detail is incomplete.",
         reasoning: "Relevant scaffolding exists, but requires complete implementation or test assertions.",
       };
@@ -102,7 +103,6 @@ async function runGeminiVerification(
     },
   });
 
-  // Prepare evidence excerpt for prompt
   const evidenceSummary = {
     submissionUrl: snapshot.url,
     submissionType: snapshot.type,
@@ -154,6 +154,10 @@ Return strictly a JSON object with this exact schema:
 }
 
 export async function POST(req: Request) {
+  // Server-side role guard: only freelancers can run verification on deliverables
+  const roleCheck = enforceRole("freelancer", req);
+  if (roleCheck) return roleCheck;
+
   try {
     const body = await req.json();
     const { submissionId, milestoneId } = verifyRequestSchema.parse(body);
@@ -170,6 +174,16 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { success: false, error: "Submission or Milestone not found" },
         { status: 404 }
+      );
+    }
+
+    if (milestone.status !== "Submitted" && milestone.status !== "RevisionRequested") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Milestone #${milestone.order} is currently '${milestone.status}'. Deliverables must be submitted before running verification.`,
+        },
+        { status: 400 }
       );
     }
 
@@ -193,8 +207,9 @@ export async function POST(req: Request) {
       };
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    // Read model ONLY from GEMINI_MODEL
     const modelName = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+    const apiKey = process.env.GEMINI_API_KEY;
 
     let evaluation: {
       criteria: z.infer<typeof criterionResultSchema>[];
@@ -202,7 +217,7 @@ export async function POST(req: Request) {
     };
 
     if (!apiKey) {
-      // Use resilient heuristic evaluation if API key not set
+      // Use resilient heuristic evaluation if API key is not set
       evaluation = evaluateHeuristicFallback(criteria, snapshot, milestone.title);
     } else {
       try {
@@ -213,8 +228,8 @@ export async function POST(req: Request) {
           modelName,
           apiKey
         );
-      } catch (firstError) {
-        console.warn("First Gemini verification failed, retrying once...", firstError);
+      } catch (firstError: any) {
+        console.warn("First Gemini verification failed, retrying once...", firstError?.message || firstError);
         try {
           evaluation = await runGeminiVerification(
             criteria,
@@ -223,8 +238,8 @@ export async function POST(req: Request) {
             modelName,
             apiKey
           );
-        } catch (retryError) {
-          console.error("Gemini retry failed, falling back to resilient evaluator:", retryError);
+        } catch (retryError: any) {
+          console.error("Gemini retry failed, falling back to resilient evaluator:", retryError?.message || retryError);
           evaluation = evaluateHeuristicFallback(criteria, snapshot, milestone.title);
         }
       }
@@ -248,13 +263,13 @@ export async function POST(req: Request) {
       },
     });
 
-    // Update Milestone status to Verified
+    // Transition Milestone status to Verified
     await prisma.milestone.update({
       where: { id: milestone.id },
       data: { status: "Verified" },
     });
 
-    // Log Event
+    // Write Event
     await prisma.event.create({
       data: {
         projectId: milestone.projectId,
@@ -283,7 +298,7 @@ export async function POST(req: Request) {
     }
     console.error("Verification endpoint error:", error);
     return NextResponse.json(
-      { success: false, error: "Verification process failed" },
+      { success: false, error: "Verification process failed. Please click 'Try again' to re-run verification." },
       { status: 500 }
     );
   }

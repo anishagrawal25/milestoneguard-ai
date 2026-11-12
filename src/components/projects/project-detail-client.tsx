@@ -392,7 +392,7 @@ export function ProjectDetailClient({ project }: ProjectDetailClientProps) {
                   Milestone Release Protocol
                 </p>
                 <p className="leading-relaxed">
-                  Payments are captured into the platform merchant account and released conditionally to the freelancer's PayPal email upon client signoff.
+                  Payments are captured into the platform merchant account and released conditionally to the freelancer&apos;s PayPal email upon client signoff.
                 </p>
               </div>
             </CardContent>
@@ -411,7 +411,7 @@ export function ProjectDetailClient({ project }: ProjectDetailClientProps) {
                 </Badge>
               </div>
               <CardDescription>
-                Timestamped audit trail of all project actions.
+                Timestamped audit trail of all project actions and client&apos;s requests.
               </CardDescription>
             </CardHeader>
 

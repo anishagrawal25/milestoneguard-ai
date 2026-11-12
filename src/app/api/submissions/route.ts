@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { fetchGitHubEvidence, fetchLiveUrlEvidence } from "@/lib/evidence-fetcher";
+import { enforceRole } from "@/lib/auth-guard";
 
 const submissionSchema = z.object({
   milestoneId: z.string().min(1, "Milestone ID is required"),
@@ -10,6 +11,10 @@ const submissionSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  // Server-side role guard: only freelancers can submit work
+  const roleCheck = enforceRole("freelancer", req);
+  if (roleCheck) return roleCheck;
+
   try {
     const body = await req.json();
     const { milestoneId, url, type } = submissionSchema.parse(body);
@@ -27,17 +32,17 @@ export async function POST(req: Request) {
       );
     }
 
-    // Only allow submissions when milestone is funded, revision requested, or already submitted
+    // Only allow submissions when milestone is funded, revision requested, or resubmission
     if (milestone.status === "Created") {
       return NextResponse.json(
-        { success: false, error: "Cannot submit work for an unfunded milestone" },
+        { success: false, error: "Cannot submit deliverables for an unfunded milestone. Client must fund milestone first." },
         { status: 400 }
       );
     }
 
     if (["Approved", "PaidOut"].includes(milestone.status)) {
       return NextResponse.json(
-        { success: false, error: "Milestone has already been approved and paid out" },
+        { success: false, error: "Milestone has already been approved and paid out." },
         { status: 400 }
       );
     }
@@ -72,7 +77,7 @@ export async function POST(req: Request) {
       data: { status: "Submitted" },
     });
 
-    // Log Event
+    // Write Event
     await prisma.event.create({
       data: {
         projectId: milestone.projectId,

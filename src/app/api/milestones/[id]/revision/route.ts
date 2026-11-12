@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { enforceRole } from "@/lib/auth-guard";
+
+const paramsSchema = z.object({
+  id: z.string().min(1, "Milestone ID required"),
+});
 
 const revisionSchema = z.object({
   note: z.string().min(5, "Please provide a detailed revision note (at least 5 characters)"),
@@ -10,8 +15,12 @@ export async function POST(
   req: Request,
   { params }: { params: { id: string } }
 ) {
+  // Server-side role guard: only clients can request revisions
+  const roleCheck = enforceRole("client", req);
+  if (roleCheck) return roleCheck;
+
   try {
-    const milestoneId = params.id;
+    const { id: milestoneId } = paramsSchema.parse(params);
     const body = await req.json();
     const { note } = revisionSchema.parse(body);
 
@@ -32,19 +41,19 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-          error: `Cannot request revision for milestone in status '${milestone.status}'. It must be 'Verified'.`,
+          error: `Cannot request revision for milestone in status '${milestone.status}'. Deliverables must be 'Verified' before requesting changes.`,
         },
         { status: 400 }
       );
     }
 
-    // Update status to RevisionRequested
+    // Transition status to RevisionRequested
     await prisma.milestone.update({
       where: { id: milestone.id },
       data: { status: "RevisionRequested" },
     });
 
-    // Log Event with client's revision note
+    // Write Event with client's revision note
     await prisma.event.create({
       data: {
         projectId: milestone.projectId,

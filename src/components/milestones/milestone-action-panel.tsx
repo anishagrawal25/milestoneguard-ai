@@ -361,7 +361,7 @@ export function MilestoneActionPanel({ milestone, project }: MilestoneActionPane
                     <span>PayPal Milestone Checkout</span>
                   </DialogTitle>
                   <DialogDescription>
-                    You are funding Milestone #{milestone.order}: "{milestone.title}".
+                    You are funding Milestone #{milestone.order}: &ldquo;{milestone.title}&rdquo;.
                   </DialogDescription>
                 </DialogHeader>
 
@@ -414,7 +414,7 @@ export function MilestoneActionPanel({ milestone, project }: MilestoneActionPane
                         Conditional Release Notice
                       </p>
                       <p>
-                        This payment will be captured into the platform's PayPal merchant account. Freelancer cannot claim funds until you inspect the AI verification report and approve release.
+                        This payment will be captured into the platform&apos;s PayPal merchant account. Freelancer cannot claim funds until you inspect the AI verification report and approve release.
                       </p>
                     </div>
 
@@ -715,7 +715,7 @@ export function MilestoneActionPanel({ milestone, project }: MilestoneActionPane
                     className="text-xs"
                   />
                   <p className="text-[11px] text-muted-foreground">
-                    This will transition the milestone status to "Revision Requested" and prompt the freelancer to resubmit.
+                    This will transition the milestone status to &ldquo;Revision Requested&rdquo; and prompt the freelancer to resubmit.
                   </p>
                 </div>
 
