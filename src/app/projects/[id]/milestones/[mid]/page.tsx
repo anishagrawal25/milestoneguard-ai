@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Badge, MilestoneStatusBadge } from "@/components/ui/badge";
 import { HorizontalStatusStepper } from "@/components/milestones/horizontal-status-stepper";
 import { MilestoneActionPanel } from "@/components/milestones/milestone-action-panel";
+import { VerificationReport } from "@/components/milestones/verification-report";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
   FileCheck2,
@@ -171,33 +172,10 @@ export default async function MilestonePage({ params }: MilestonePageProps) {
           </Card>
         </div>
 
-        {/* Right Column: Verification Report Placeholder or Actual Component */}
+        {/* Right Column: Verification Report Component */}
         <div className="lg:col-span-7 space-y-4" id="verification-report-section">
           {latestVerification ? (
-            <div id="active-verification-report">
-              {/* This will be replaced by the rich VerificationReport component in Commit 12 */}
-              <Card className="rounded-2xl border-border/80 shadow-card">
-                <CardHeader className="p-6 pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-violet-600" />
-                      <CardTitle className="text-base">AI Verification Report</CardTitle>
-                    </div>
-                    <Badge variant="verified">
-                      Score: {latestVerification.score}%
-                    </Badge>
-                  </div>
-                  <CardDescription>
-                    Analyzed submission: {latestSubmission?.url}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-6 pt-0 space-y-4">
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {latestVerification.summary}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+            <VerificationReport submissions={milestone.submissions as any} />
           ) : (
             <Card className="rounded-2xl border-dashed border-border/80 bg-muted/20 p-8 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 mx-auto mb-3">
