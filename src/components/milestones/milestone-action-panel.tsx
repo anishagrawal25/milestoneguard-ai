@@ -65,7 +65,7 @@ export function MilestoneActionPanel({
   milestone,
   project,
   paymentMode = "mock",
-  demoRepoUrl = "https://github.com/facebook/react",
+  demoRepoUrl = "https://github.com/anishagrawal25/dockerized-react-app",
 }: MilestoneActionPanelProps) {
   const router = useRouter();
   const { role } = useRole();

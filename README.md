@@ -69,7 +69,7 @@ sequenceDiagram
 - **AI Acceptance Criteria Drafting**: Gemini assists both parties in turning ambiguous project descriptions into 3–5 objective, testable criteria chips.
 - **Static Code Verification**: Gemini inspects the file tree and key source files (prioritized source files truncated to ~4000 characters).
 - **Strict Evidence Citation**: The system prompt forces Gemini to only cite actual lines from the repository snapshot. Unimplemented criteria are marked `missing`, stubbed logic is marked `partial`, and completed items are marked `met`.
-- **Configurable Model**: The AI model is configured via `GEMINI_MODEL` (defaults to `gemini-2.0-flash`).
+- **Configurable Model**: The AI model is configured via `GEMINI_MODEL` (defaults to `gemini-3.5-flash`).
 - **Resilient AI Pipeline**: Automatic retry on rate limits with domain-aware heuristic fallback so the application never crashes.
 
 ### 3. System Limitations
@@ -87,7 +87,7 @@ sequenceDiagram
 - **Database**: SQLite with Prisma ORM
 - **Validation**: Zod (all API endpoints, AI responses, and webhook payloads)
 - **Payments**: PayPal REST API (Orders v2, Payouts, Webhooks) & `@paypal/react-paypal-js`
-- **AI Model**: Google Gemini (`GEMINI_MODEL`, default `gemini-2.0-flash`) via `@google/generative-ai`
+- **AI Model**: Google Gemini (`GEMINI_MODEL`, default `gemini-3.5-flash`) via `@google/generative-ai`
 - **Testing**: Vitest (Milestone state-machine, action guards, and Zod request schemas)
 - **Deployment**: Render Web Service (`render.yaml` with auto-migration and auto-seed)
 
@@ -117,10 +117,10 @@ cp .env.example .env
 | `NEXT_PUBLIC_PAYPAL_CLIENT_ID`| Public PayPal Client ID for JS SDK | - |
 | `PAYPAL_CURRENCY` | Currency code for orders & payouts | `USD` |
 | `GEMINI_API_KEY` | Google Gemini API Key | - |
-| `GEMINI_MODEL` | Gemini Model Name | `gemini-2.0-flash` |
+| `GEMINI_MODEL` | Gemini Model Name | `gemini-3.5-flash` |
 | `GITHUB_TOKEN` | Optional GitHub PAT for higher rate limits | - |
 | `APP_BASE_URL` | Base URL for webhooks and redirects | `http://localhost:3000` |
-| `DEMO_REPO_URL` | Pre-filled sample repo for 1-click submission | `https://github.com/facebook/react` |
+| `DEMO_REPO_URL` | Pre-filled sample repo for 1-click submission | `https://github.com/anishagrawal25/dockerized-react-app` |
 | `DATABASE_URL` | SQLite database connection string | `file:./dev.db` |
 
 ### 3. Setup Database & Seed

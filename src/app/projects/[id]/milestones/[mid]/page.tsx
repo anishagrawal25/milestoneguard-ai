@@ -82,7 +82,7 @@ export default async function MilestonePage({ params }: MilestonePageProps) {
         milestone={milestone as any}
         project={milestone.project as any}
         paymentMode={process.env.PAYMENT_MODE || "mock"}
-        demoRepoUrl={process.env.DEMO_REPO_URL || "https://github.com/facebook/react"}
+        demoRepoUrl={process.env.DEMO_REPO_URL || "https://github.com/anishagrawal25/dockerized-react-app"}
       />
 
       {/* 3. AGREED CRITERIA & EVIDENCE VERIFICATION REPORT BELOW */}

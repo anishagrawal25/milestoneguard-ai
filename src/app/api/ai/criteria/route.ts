@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
     const { title, description } = criteriaRequestSchema.parse(body);
 
     const apiKey = process.env.GEMINI_API_KEY;
-    const modelName = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+    const modelName = process.env.GEMINI_MODEL || "gemini-3.5-flash";
 
     // If no API key provided, supply intelligent fallback
     if (!apiKey) {
@@ -114,7 +114,8 @@ export async function POST(req: NextRequest) {
         mode: "gemini",
       });
     } catch (firstError) {
-      console.warn("First Gemini call failed, retrying once...", firstError);
+      console.warn("First Gemini call failed, retrying once after 2 seconds...", firstError);
+      await new Promise((r) => setTimeout(r, 2000));
       try {
         const retryData = await callGemini(title, description, modelName, apiKey);
         return NextResponse.json({

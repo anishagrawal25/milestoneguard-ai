@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Read model ONLY from GEMINI_MODEL
-    const modelName = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+    const modelName = process.env.GEMINI_MODEL || "gemini-3.5-flash";
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
@@ -176,7 +176,8 @@ export async function POST(req: NextRequest) {
       // Log server-side only: which model and provider answered
       console.log(`[AI Verification] Provider: Google Gemini | Model: ${modelName} | Milestone: "${milestone.title}" (#${milestone.order}) answered verification successfully.`);
     } catch (firstError: any) {
-      console.warn(`[AI Verification] First attempt with Google Gemini (${modelName}) failed, retrying once:`, firstError?.message || firstError);
+      console.warn(`[AI Verification] First attempt with Google Gemini (${modelName}) failed, retrying after 2 seconds:`, firstError?.message || firstError);
+      await new Promise((r) => setTimeout(r, 2000));
       try {
         evaluation = await runGeminiVerification(
           criteria,

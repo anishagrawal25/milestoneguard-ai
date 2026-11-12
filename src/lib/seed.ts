@@ -14,232 +14,56 @@ export async function seedDatabase() {
   const freelancerName = "Sara Khan";
   const freelancerEmail = "sb-1nae650838145@business.example.com";
 
-  // PROJECT 1: E-commerce Website
+  // PROJECT 1: Containerized React Deployment
   const p1 = await prisma.project.create({
     data: {
-      title: "E-commerce Website",
+      title: "Containerized React Deployment",
       description:
-        "Modern headless e-commerce storefront with product catalog, cart management, and seamless PayPal checkout integration.",
+        "Production containerization of Vite React web application with Nginx Alpine static serving, multi-stage Docker build pipeline, and container deployment criteria.",
       clientName,
       freelancerName,
       freelancerEmail,
-      createdAt: new Date(Date.now() - 14 * 86400000), // 14 days ago
+      createdAt: new Date(Date.now() - 5 * 86400000), // 5 days ago
     },
   });
 
-  // Project 1 - Milestone 1: PaidOut
+  // Project 1 - Milestone 1: Created (Ready for client funding & demo verification)
   const m1_1 = await prisma.milestone.create({
     data: {
       projectId: p1.id,
       order: 1,
-      title: "Product Catalog & Filtering",
+      title: "Dockerize the React app and serve it with Nginx",
       description:
-        "Interactive product catalog with category facets, server-side search debounce, and responsive product detail modals.",
-      amount: 1200,
-      status: "PaidOut",
-      criteria: JSON.stringify([
-        "Product listing grid with category filtering and pagination",
-        "Product detail page showing high-res images, SKU, variants, and stock availability",
-        "Responsive search bar with debounce query support and instant result dropdown",
-        "REST API endpoints returning sanitized product payloads with test coverage",
-      ]),
-      createdAt: new Date(Date.now() - 14 * 86400000),
-    },
-  });
-
-  await prisma.payment.create({
-    data: {
-      milestoneId: m1_1.id,
-      paypalOrderId: "MOCK-PAYPAL-ORD-1011",
-      captureId: "MOCK-PAYPAL-CAP-1011",
-      amount: 1200,
-      currency: "USD",
-      status: "COMPLETED",
-      mode: "mock",
-      createdAt: new Date(Date.now() - 13 * 86400000),
-    },
-  });
-
-  const sub1_1 = await prisma.submission.create({
-    data: {
-      milestoneId: m1_1.id,
-      url: "https://github.com/sara-khan/ecommerce-catalog-module",
-      type: "github",
-      evidenceSnapshot: JSON.stringify({
-        source: "github",
-        repo: "sara-khan/ecommerce-catalog-module",
-        files: [
-          "src/components/ProductGrid.tsx",
-          "src/components/ProductCard.tsx",
-          "src/pages/product/[id].tsx",
-          "src/pages/api/products.ts",
-          "tests/products.test.ts",
-        ],
-      }),
-      createdAt: new Date(Date.now() - 10 * 86400000),
-    },
-  });
-
-  await prisma.verification.create({
-    data: {
-      submissionId: sub1_1.id,
-      score: 100,
-      summary:
-        "All 4 acceptance criteria have been verified with complete evidence. The product catalog implements responsive grid layout, category filtering, high-resolution media galleries with variant pickers, search debounce, and fully typed endpoints with 94% test coverage.",
-      perCriterion: JSON.stringify([
-        {
-          criterion: "Product listing grid with category filtering and pagination",
-          status: "met",
-          evidence: "src/components/ProductGrid.tsx: Grid component renders responsive layout with dynamic filter facet sidebar and cursor-based pagination.",
-          reasoning: "Pagination and category filters are fully wired up to URL search params.",
-        },
-        {
-          criterion: "Product detail page showing high-res images, SKU, variants, and stock availability",
-          status: "met",
-          evidence: "src/pages/product/[id].tsx: Detail view displays image carousel, SKU code, variant color/size pills, and live inventory count badge.",
-          reasoning: "All required detail fields and variant selections are present and visually represented.",
-        },
-        {
-          criterion: "Responsive search bar with debounce query support and instant result dropdown",
-          status: "met",
-          evidence: "src/components/SearchBar.tsx: Implements useDebounce(300ms) hook to query /api/products/search and render instant preview list.",
-          reasoning: "Debounced user input prevents query storms and provides instant visual feedback.",
-        },
-        {
-          criterion: "REST API endpoints returning sanitized product payloads with test coverage",
-          status: "met",
-          evidence: "tests/products.test.ts: 8 unit tests assert payload structure, sanitization of input filters, and 200 HTTP responses.",
-          reasoning: "API routes and test assertions fulfill the backend contract.",
-        },
-      ]),
-      createdAt: new Date(Date.now() - 9 * 86400000),
-    },
-  });
-
-  await prisma.payout.create({
-    data: {
-      milestoneId: m1_1.id,
-      batchId: "PAYOUTS-BATCH-2024-8849",
-      status: "SUCCESS",
-      simulated: true,
-      amount: 1200,
-      recipient: freelancerEmail,
-      createdAt: new Date(Date.now() - 8 * 86400000),
-    },
-  });
-
-  // Project 1 - Milestone 2: Verified (waiting for client approval, mixed report)
-  const m1_2 = await prisma.milestone.create({
-    data: {
-      projectId: p1.id,
-      order: 2,
-      title: "Shopping Cart & Checkout Integration",
-      description:
-        "Persistent cart state, quantity controls, coupon engine, and PayPal smart checkout button integration.",
-      amount: 1800,
-      status: "Verified",
-      criteria: JSON.stringify([
-        "Persistent cart state across browser sessions using local storage or server session",
-        "Real-time line item quantity updates with automatic tax and shipping recalculation",
-        "Promo code discount validation engine with expiration check and minimum cart rules",
-        "PayPal checkout button integration with server-side order capture workflow",
-        "Automated order confirmation email dispatch with invoice PDF attachment",
-      ]),
-      createdAt: new Date(Date.now() - 7 * 86400000),
-    },
-  });
-
-  await prisma.payment.create({
-    data: {
-      milestoneId: m1_2.id,
-      paypalOrderId: "MOCK-PAYPAL-ORD-2044",
-      captureId: "MOCK-PAYPAL-CAP-2044",
-      amount: 1800,
-      currency: "USD",
-      status: "COMPLETED",
-      mode: "mock",
-      createdAt: new Date(Date.now() - 6 * 86400000),
-    },
-  });
-
-  const sub1_2 = await prisma.submission.create({
-    data: {
-      milestoneId: m1_2.id,
-      url: "https://github.com/sara-khan/ecommerce-checkout-core",
-      type: "github",
-      evidenceSnapshot: JSON.stringify({
-        source: "github",
-        repo: "sara-khan/ecommerce-checkout-core",
-        files: [
-          "src/context/CartContext.tsx",
-          "src/components/CartSummary.tsx",
-          "src/lib/discounts.ts",
-          "src/components/PayPalButton.tsx",
-          "src/pages/api/checkout/capture.ts",
-        ],
-      }),
-      createdAt: new Date(Date.now() - 2 * 86400000),
-    },
-  });
-
-  await prisma.verification.create({
-    data: {
-      submissionId: sub1_2.id,
-      score: 60,
-      summary:
-        "The repository successfully implements the core shopping cart persistence and PayPal button integration. However, the promo code validation is missing the minimum order value boundary, and the automated email confirmation with PDF generation is entirely absent.",
-      perCriterion: JSON.stringify([
-        {
-          criterion: "Persistent cart state across browser sessions using local storage or server session",
-          status: "met",
-          evidence: "src/context/CartContext.tsx: useEffect hook synchronizes cart state to localStorage with key 'mg_cart_store'. Re-hydration logic validates item freshness on mount.",
-          reasoning: "Session persistence implemented with local storage fallback and state dehydration.",
-        },
-        {
-          criterion: "Real-time line item quantity updates with automatic tax and shipping recalculation",
-          status: "met",
-          evidence: "src/components/CartSummary.tsx: Line items update quantity and triggers calculateSubtotal(), calculateTax(0.0825), and calculateShipping().",
-          reasoning: "Line item quantities recalculate cart totals immediately with tax and shipping logic.",
-        },
-        {
-          criterion: "Promo code discount validation engine with expiration check and minimum cart rules",
-          status: "partial",
-          evidence: "src/lib/discounts.ts: validatePromoCode() checks code expiration and percentage deduction, but line 42 has a '// TODO: add min cart spend threshold' comment.",
-          reasoning: "Discount code expiry and percentage deduction work, but the minimum cart spend rule is incomplete.",
-        },
-        {
-          criterion: "PayPal checkout button integration with server-side order capture workflow",
-          status: "met",
-          evidence: "src/components/PayPalButton.tsx & src/pages/api/checkout/capture.ts: Integrates @paypal/react-paypal-js with server-side /api/checkout/capture endpoint.",
-          reasoning: "Payment capture initiates on button click and verifies response on the server route.",
-        },
-        {
-          criterion: "Automated order confirmation email dispatch with invoice PDF attachment",
-          status: "missing",
-          evidence: "No email dispatch service or PDF generation library found in package.json or src/services/mailer.ts.",
-          reasoning: "Mailer service is only an empty mock interface; no PDF generator or email transport exists.",
-        },
-      ]),
-      createdAt: new Date(Date.now() - 1 * 86400000),
-    },
-  });
-
-  // Project 1 - Milestone 3: Created
-  await prisma.milestone.create({
-    data: {
-      projectId: p1.id,
-      order: 3,
-      title: "Order History & Customer Account Portal",
-      description:
-        "Customer authentication, past order archive with printable receipts, tracking integration, and address book.",
+        "Multi-stage Dockerfile packaging Vite React build artifacts into an Nginx Alpine container, custom SPA reverse proxy routing, and local deployment configuration.",
       amount: 1000,
       status: "Created",
       criteria: JSON.stringify([
-        "Customer authentication with password reset and secure JWT session management",
-        "Order history table with pagination, tracking link, and printable invoice views",
-        "Shipping and billing address management with primary address selection",
+        "A multi-stage Dockerfile that builds the React application with Node.js and packages it into an Nginx Alpine container exposing port 80",
+        "Nginx configuration with SPA fallback routing using try_files to index.html and gzip compression enabled",
+        "A .dockerignore file that excludes build artifacts and sensitive directories (node_modules, dist, .git, .env) while omitting common dev logs and container configuration files",
+        "A docker-compose.yml file configuring container services, port bindings, and environment variables for local development",
+        "README documentation detailing docker build and docker run commands with container port mapping instructions",
       ]),
-      createdAt: new Date(Date.now() - 7 * 86400000),
+      createdAt: new Date(Date.now() - 5 * 86400000),
+    },
+  });
+
+  // Project 1 - Milestone 2: Created (Next phase)
+  await prisma.milestone.create({
+    data: {
+      projectId: p1.id,
+      order: 2,
+      title: "CI/CD Automated Container Registry Pipeline",
+      description:
+        "GitHub Actions workflow to build, tag, and publish Docker container images to GitHub Container Registry (GHCR) with vulnerability scanning.",
+      amount: 1500,
+      status: "Created",
+      criteria: JSON.stringify([
+        "GitHub Actions workflow triggered on push to main branch",
+        "Automated Docker image build and push to container registry with semantic version tags",
+        "Trivy container security vulnerability scanner step in CI pipeline",
+      ]),
+      createdAt: new Date(Date.now() - 5 * 86400000),
     },
   });
 
@@ -249,57 +73,8 @@ export async function seedDatabase() {
       {
         projectId: p1.id,
         type: "PROJECT_CREATED",
-        message: 'Project "E-commerce Website" created by Aarav Mehta',
-        createdAt: new Date(Date.now() - 14 * 86400000),
-      },
-      {
-        projectId: p1.id,
-        milestoneId: m1_1.id,
-        type: "PAYMENT_CAPTURED",
-        message: 'Milestone 1 ("Product Catalog & Filtering") funded with $1,200 via PayPal',
-        createdAt: new Date(Date.now() - 13 * 86400000),
-      },
-      {
-        projectId: p1.id,
-        milestoneId: m1_1.id,
-        type: "SUBMISSION_RECEIVED",
-        message: 'Sara Khan submitted repository for Milestone 1',
-        createdAt: new Date(Date.now() - 10 * 86400000),
-      },
-      {
-        projectId: p1.id,
-        milestoneId: m1_1.id,
-        type: "VERIFICATION_COMPLETED",
-        message: 'AI verified Milestone 1 submission: 100% score (4/4 criteria met)',
-        createdAt: new Date(Date.now() - 9 * 86400000),
-      },
-      {
-        projectId: p1.id,
-        milestoneId: m1_1.id,
-        type: "PAYOUT_RELEASED",
-        message: 'Aarav Mehta approved Milestone 1. Released $1,200 payout to Sara Khan',
-        createdAt: new Date(Date.now() - 8 * 86400000),
-      },
-      {
-        projectId: p1.id,
-        milestoneId: m1_2.id,
-        type: "PAYMENT_CAPTURED",
-        message: 'Milestone 2 ("Shopping Cart & Checkout Integration") funded with $1,800 via PayPal',
-        createdAt: new Date(Date.now() - 6 * 86400000),
-      },
-      {
-        projectId: p1.id,
-        milestoneId: m1_2.id,
-        type: "SUBMISSION_RECEIVED",
-        message: 'Sara Khan submitted repository for Milestone 2',
-        createdAt: new Date(Date.now() - 2 * 86400000),
-      },
-      {
-        projectId: p1.id,
-        milestoneId: m1_2.id,
-        type: "VERIFICATION_COMPLETED",
-        message: 'AI verified Milestone 2 submission: 60% score (3 met, 1 partial, 1 missing). Awaiting client review.',
-        createdAt: new Date(Date.now() - 1 * 86400000),
+        message: 'Project "Containerized React Deployment" created by Aarav Mehta',
+        createdAt: new Date(Date.now() - 5 * 86400000),
       },
     ],
   });

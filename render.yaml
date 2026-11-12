@@ -11,12 +11,12 @@ services:
       - key: PAYMENT_MODE
         value: mock
       - key: GEMINI_MODEL
-        value: gemini-2.0-flash
+        value: gemini-3.5-flash
       - key: DATABASE_URL
         value: file:./dev.db
       - key: APP_BASE_URL
         value: https://milestoneguard-ai.onrender.com
       - key: DEMO_REPO_URL
-        value: https://github.com/facebook/react
+        value: https://github.com/anishagrawal25/dockerized-react-app
       - key: PAYPAL_CURRENCY
         value: USD
