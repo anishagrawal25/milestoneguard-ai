@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: milestoneguard-ai
+    runtime: node
+    plan: free
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PAYMENT_MODE
+        value: mock
+      - key: GEMINI_MODEL
+        value: gemini-2.0-flash
+      - key: DATABASE_URL
+        value: file:./dev.db
+      - key: APP_BASE_URL
+        value: https://milestoneguard-ai.onrender.com
+      - key: DEMO_REPO_URL
+        value: https://github.com/facebook/react
+      - key: PAYPAL_CURRENCY
+        value: USD
