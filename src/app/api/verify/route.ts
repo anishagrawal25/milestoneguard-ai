@@ -1,9 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { prisma } from "@/lib/prisma";
 import { EvidenceSnapshot } from "@/lib/evidence-fetcher";
 import { enforceRole } from "@/lib/auth-guard";
+import { parseJsonBody } from "@/lib/parse-json";
 
 const verifyRequestSchema = z.object({
   submissionId: z.string().min(1, "Submission ID is required"),
@@ -21,71 +22,6 @@ const verificationResponseSchema = z.object({
   criteria: z.array(criterionResultSchema).min(1),
   summary: z.string().min(10),
 });
-
-// Heuristic fallback evaluator when Gemini API key is unset, rate limited, or model unreachable
-function evaluateHeuristicFallback(
-  criteria: string[],
-  snapshot: EvidenceSnapshot,
-  milestoneTitle: string
-): { criteria: z.infer<typeof criterionResultSchema>[]; summary: string } {
-  const allText = [
-    JSON.stringify(snapshot.metadata || {}),
-    ...(snapshot.files || []).map((f) => `${f.path}\n${f.content}`),
-    snapshot.pageContent?.visibleText || "",
-    (snapshot.treeSample || []).join("\n"),
-  ]
-    .join("\n")
-    .toLowerCase();
-
-  const results = criteria.map((criterion, idx) => {
-    const words = criterion
-      .toLowerCase()
-      .split(/[^a-z0-9]+/)
-      .filter((w) => w.length > 3 && !["with", "from", "that", "this", "each"].includes(w));
-
-    const matches = words.filter((w) => allText.includes(w));
-    const matchRatio = words.length > 0 ? matches.length / words.length : 0;
-
-    const matchingFile = snapshot.files?.find((f) =>
-      words.some((w) => f.path.toLowerCase().includes(w) || f.content.toLowerCase().includes(w))
-    );
-
-    if (matchRatio >= 0.6) {
-      return {
-        criterion,
-        status: "met" as const,
-        evidence: matchingFile
-          ? `${matchingFile.path}: Implementation keywords verified in source AST.`
-          : `Verified in repository snapshot file tree (${matches.slice(0, 3).join(", ")} found).`,
-        reasoning: "Core functional contracts and identifiers detected in repository snapshot.",
-      };
-    } else if (matchRatio >= 0.25 || idx % 2 === 1) {
-      return {
-        criterion,
-        status: "partial" as const,
-        evidence: matchingFile
-          ? `${matchingFile.path}: Partial symbol definition found, but some secondary boundary conditions appear incomplete.`
-          : "Partial matches identified in repository structure, but specific implementation detail is incomplete.",
-        reasoning: "Relevant scaffolding exists, but requires complete implementation or test assertions.",
-      };
-    } else {
-      return {
-        criterion,
-        status: "missing" as const,
-        evidence: "No corresponding module, function, or test assertions identified in repository snapshot.",
-        reasoning: "Zero evidence found matching acceptance criterion specifications.",
-      };
-    }
-  });
-
-  const metCount = results.filter((r) => r.status === "met").length;
-  const partialCount = results.filter((r) => r.status === "partial").length;
-  const missingCount = results.filter((r) => r.status === "missing").length;
-
-  const summary = `Static analysis evaluated ${criteria.length} criteria for "${milestoneTitle}". ${metCount} verified fully, ${partialCount} partially evidenced, and ${missingCount} criteria lacked required code evidence.`;
-
-  return { criteria: results, summary };
-}
 
 async function runGeminiVerification(
   criteria: string[],
@@ -119,7 +55,7 @@ async function runGeminiVerification(
 Your goal is to inspect the submitted repository/URL snapshot and objectively verify whether the agreed acceptance criteria are satisfied.
 
 STRICT EVALUATION RULES:
-1. ONLY cite evidence explicitly present in the provided snapshot.
+1. ONLY cite evidence explicitly present in the provided snapshot (file tree and key source files).
 2. NEVER invent file paths, functions, or variable names.
 3. For each criterion, assign one status:
    - "met": The code or evidence clearly implements this requirement. Provide exact file path and a concise relevant code snippet.
@@ -153,13 +89,15 @@ Return strictly a JSON object with this exact schema:
   return verificationResponseSchema.parse(parsed);
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   // Server-side role guard: only freelancers can run verification on deliverables
   const roleCheck = enforceRole("freelancer", req);
   if (roleCheck) return roleCheck;
 
+  const { data: body, errorResponse } = await parseJsonBody(req);
+  if (errorResponse) return errorResponse;
+
   try {
-    const body = await req.json();
     const { submissionId, milestoneId } = verifyRequestSchema.parse(body);
 
     const submission = await prisma.submission.findUnique({
@@ -211,15 +149,34 @@ export async function POST(req: Request) {
     const modelName = process.env.GEMINI_MODEL || "gemini-2.0-flash";
     const apiKey = process.env.GEMINI_API_KEY;
 
+    if (!apiKey) {
+      console.warn("[AI Verification] GEMINI_API_KEY is not configured on server.");
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Gemini API key is not configured on the server. Please set GEMINI_API_KEY in your environment to run AI verification.",
+        },
+        { status: 503 }
+      );
+    }
+
     let evaluation: {
       criteria: z.infer<typeof criterionResultSchema>[];
       summary: string;
     };
 
-    if (!apiKey) {
-      // Use resilient heuristic evaluation if API key is not set
-      evaluation = evaluateHeuristicFallback(criteria, snapshot, milestone.title);
-    } else {
+    try {
+      evaluation = await runGeminiVerification(
+        criteria,
+        snapshot,
+        milestone.title,
+        modelName,
+        apiKey
+      );
+      // Log server-side only: which model and provider answered
+      console.log(`[AI Verification] Provider: Google Gemini | Model: ${modelName} | Milestone: "${milestone.title}" (#${milestone.order}) answered verification successfully.`);
+    } catch (firstError: any) {
+      console.warn(`[AI Verification] First attempt with Google Gemini (${modelName}) failed, retrying once:`, firstError?.message || firstError);
       try {
         evaluation = await runGeminiVerification(
           criteria,
@@ -228,20 +185,17 @@ export async function POST(req: Request) {
           modelName,
           apiKey
         );
-      } catch (firstError: any) {
-        console.warn("First Gemini verification failed, retrying once...", firstError?.message || firstError);
-        try {
-          evaluation = await runGeminiVerification(
-            criteria,
-            snapshot,
-            milestone.title,
-            modelName,
-            apiKey
-          );
-        } catch (retryError: any) {
-          console.error("Gemini retry failed, falling back to resilient evaluator:", retryError?.message || retryError);
-          evaluation = evaluateHeuristicFallback(criteria, snapshot, milestone.title);
-        }
+        console.log(`[AI Verification] Provider: Google Gemini | Model: ${modelName} answered verification successfully on retry.`);
+      } catch (retryError: any) {
+        console.error(`[AI Verification] Provider: Google Gemini | Model: ${modelName} failed verification after retry:`, retryError?.message || retryError);
+        return NextResponse.json(
+          {
+            success: false,
+            error: "AI verification model is temporarily unavailable. Please click 'Try again' to re-run verification.",
+            details: retryError?.message,
+          },
+          { status: 502 }
+        );
       }
     }
 
@@ -298,7 +252,7 @@ export async function POST(req: Request) {
     }
     console.error("Verification endpoint error:", error);
     return NextResponse.json(
-      { success: false, error: "Verification process failed. Please click 'Try again' to re-run verification." },
+      { success: false, error: "Verification process encountered an unexpected error. Please click 'Try again' to re-run verification." },
       { status: 500 }
     );
   }
