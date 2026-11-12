@@ -314,7 +314,7 @@ export default function LandingPage() {
                 </div>
                 <h4 className="text-lg font-bold text-foreground">Evidence-Based, Not Subjective</h4>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  No generic disputes. The AI model inspects AST file trees, functions, routes, and tests. Every verification cites exact line numbers and code snippets from the repo snapshot.
+                  No generic disputes. The AI model inspects file tree and key source files, functions, routes, and tests. Every verification cites exact line numbers and code snippets from the repo snapshot.
                 </p>
               </CardContent>
             </Card>

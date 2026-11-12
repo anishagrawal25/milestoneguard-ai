@@ -67,13 +67,13 @@ sequenceDiagram
 
 ### 2. How AI is Used
 - **AI Acceptance Criteria Drafting**: Gemini assists both parties in turning ambiguous project descriptions into 3–5 objective, testable criteria chips.
-- **Static Code Verification**: Gemini inspects the AST file tree and relevant code files (prioritized source files truncated to ~4000 characters).
+- **Static Code Verification**: Gemini inspects the file tree and key source files (prioritized source files truncated to ~4000 characters).
 - **Strict Evidence Citation**: The system prompt forces Gemini to only cite actual lines from the repository snapshot. Unimplemented criteria are marked `missing`, stubbed logic is marked `partial`, and completed items are marked `met`.
 - **Configurable Model**: The AI model is configured via `GEMINI_MODEL` (defaults to `gemini-2.0-flash`).
 - **Resilient AI Pipeline**: Automatic retry on rate limits with domain-aware heuristic fallback so the application never crashes.
 
 ### 3. System Limitations
-- **Static Analysis Only**: Code is analyzed through static text and AST inspection of repository contents; code is not executed in a runtime sandbox or VM.
+- **Static Analysis Only**: Code is analyzed through static inspection of repository contents (file tree and key source files); code is not executed in a runtime sandbox or VM.
 - **Sandbox Environment Only**: Intended for PayPal Sandbox testing and hackathon evaluation; production deployment requires standard PayPal compliance approvals.
 - **Simulated Payout Fallback**: When PayPal Sandbox accounts lack Payouts API permissions, the system tags the transaction with a `Simulated Payout` badge to preserve demo flow without masking status.
 

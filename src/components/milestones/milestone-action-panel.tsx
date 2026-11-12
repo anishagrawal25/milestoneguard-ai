@@ -176,7 +176,7 @@ export function MilestoneActionPanel({
       }
 
       // Step 2: Reading key files
-      setVerificationStep("Reading relevant source files & AST...");
+      setVerificationStep("Reading file tree and key source files...");
       await new Promise((r) => setTimeout(r, 600));
 
       // Step 3: Checking each criterion with Gemini

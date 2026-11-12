@@ -62,7 +62,7 @@ async function callGemini(title: string, description: string | undefined, modelN
   });
 
   const prompt = `You are an expert technical project architect for software contracts.
-Given the milestone title and description below, generate 3 to 5 clear, objective, and testable acceptance criteria that can be statically verified by inspecting repository source files, ASTs, and configuration.
+Given the milestone title and description below, generate 3 to 5 clear, objective, and testable acceptance criteria that can be statically verified by inspecting repository source files, file tree, and configuration.
 
 Milestone Title: "${title}"
 Milestone Description: "${description || "Deliverable for " + title}"
