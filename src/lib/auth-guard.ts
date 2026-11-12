@@ -42,3 +42,4 @@ export function enforceRole(requiredRole: Role, req?: Request): NextResponse | n
   }
   return null;
 }
+
